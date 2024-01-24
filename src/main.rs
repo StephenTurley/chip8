@@ -7,7 +7,7 @@ fn main() {
     if args.len() <= 1 {
         panic!("You need to pass a path to a ROM file to load");
     }
-    let _rom_path = &args[1];
+    let rom_path = &args[1];
 
     let mut heap: [u8; 4096] = [0x0; 4096];
     let _pc: u16;
@@ -19,6 +19,7 @@ fn main() {
     let _registers: [u8; 16];
 
     heap::load_font(&mut heap);
-    let byte = &heap[0x051];
-    println!("The byte is {}", byte);
+    heap::load_rom(&mut heap, rom_path);
+    let rom = &heap[0x200..0x220];
+    dbg!(rom);
 }

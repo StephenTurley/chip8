@@ -1,3 +1,5 @@
+use std::fs;
+
 // 0x050 - 0x09F
 const FONT_START: usize = 0x050;
 const FONT: [u8; 80] = [
@@ -19,7 +21,7 @@ const FONT: [u8; 80] = [
     0xF0, 0x80, 0xF0, 0x80, 0x80, // F
 ];
 
-const _ROM_START: usize = 0x200;
+const ROM_START: usize = 0x200;
 
 pub fn load_font(heap: &mut [u8; 4096]) {
     for (i, byte) in FONT.into_iter().enumerate() {
@@ -27,4 +29,8 @@ pub fn load_font(heap: &mut [u8; 4096]) {
     }
 }
 
-fn _load_rom(_heap: &mut [u8; 4096], _rom_path: &String) {}
+pub fn load_rom(heap: &mut [u8; 4096], rom_path: &String) {
+    for (i, b) in fs::read(rom_path).unwrap().into_iter().enumerate() {
+        heap[ROM_START + i] = b;
+    }
+}
