@@ -38,7 +38,7 @@ fn main() {
                 0x7000 => {
                     let register = op & 0x0F00;
                     let value = op & 0x00FF;
-                    println!("add V{:#06X} to {}", value, register);
+                    println!("add {:#06X} to V{}", value, register);
                 }
                 0xA000 => {
                     let value = op & 0x0FFF;
