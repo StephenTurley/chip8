@@ -23,18 +23,28 @@ const FONT: [u8; 80] = [
 
 pub const ROM_START: u16 = 0x200;
 
-pub fn load_font(heap: &mut [u8; 4096]) {
-    for (i, byte) in FONT.into_iter().enumerate() {
-        heap[FONT_START + i] = byte;
-    }
+pub struct Heap {
+    mem: [u8; 4096],
 }
 
-pub fn load_rom(heap: &mut [u8; 4096], rom_path: &String) {
-    for (i, b) in fs::read(rom_path).unwrap().into_iter().enumerate() {
-        heap[ROM_START as usize + i] = b;
+impl Heap {
+    pub fn new() -> Heap {
+        Heap { mem: [0; 4096] }
     }
-}
 
-pub fn fetch_op(heap: &[u8; 4096], address: usize) -> u16 {
-    (heap[address] as u16) << 8 | (heap[address + 1] as u16)
+    pub fn load_font(&mut self) {
+        for (i, byte) in FONT.into_iter().enumerate() {
+            self.mem[FONT_START + i] = byte;
+        }
+    }
+
+    pub fn load_rom(&mut self, rom_path: &String) {
+        for (i, b) in fs::read(rom_path).unwrap().into_iter().enumerate() {
+            self.mem[ROM_START as usize + i] = b;
+        }
+    }
+
+    pub fn fetch_op(&self, address: usize) -> u16 {
+        (self.mem[address] as u16) << 8 | (self.mem[address + 1] as u16)
+    }
 }
