@@ -31,12 +31,12 @@ fn main() {
                     println!("jmp to {:#06X}", jmp);
                 }
                 0x6000 => {
-                    let register = op & 0x0F00;
+                    let register = (op & 0x0F00) >> 8;
                     let value = op & 0x00FF;
                     println!("set V{} to {:#06X}", register, value);
                 }
                 0x7000 => {
-                    let register = op & 0x0F00;
+                    let register = (op & 0x0F00) >> 8;
                     let value = op & 0x00FF;
                     println!("add {:#06X} to V{}", value, register);
                 }
@@ -45,8 +45,8 @@ fn main() {
                     println!("set I to {:#06X}", value);
                 }
                 0xD000 => {
-                    let x = op & 0x0F00;
-                    let y = op & 0x00F0;
+                    let x = (op & 0x0F00) >> 8;
+                    let y = (op & 0x00F0) >> 4;
                     let value = op & 0x000F;
 
                     println!("draw {:#06X} at X{}, Y{}", value, x, y);
