@@ -3,6 +3,7 @@ mod heap;
 mod op_code;
 
 use emulator::System;
+use op_code::OpCode;
 use std::env;
 
 fn main() {
@@ -18,8 +19,8 @@ fn main() {
         let op = system.fetch();
 
         // decode
-        let op_code: op_code::OpCode = op_code::decode(op);
-        if op_code == op_code::OpCode::Unknown {
+        let op_code: OpCode = op_code::decode(op);
+        if op_code == OpCode::Unknown {
             break;
         }
 
