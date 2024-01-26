@@ -32,6 +32,10 @@ impl Heap {
         Heap { mem: [0; 4096] }
     }
 
+    pub fn set_byte(&mut self, addr: usize, value: u8) {
+        self.mem[addr] = value;
+    }
+
     pub fn load_font(&mut self) {
         for (i, byte) in FONT.into_iter().enumerate() {
             self.mem[FONT_START + i] = byte;

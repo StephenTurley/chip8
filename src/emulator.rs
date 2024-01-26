@@ -5,7 +5,7 @@ use crate::OpCode;
 pub struct System {
     heap: Heap,
     pc: u16,
-    // i: u16,
+    i: u16,
     // stack: [u16; 64],
     frame_buffer: [[bool; 64]; 32],
     // delay: u8,
@@ -17,7 +17,7 @@ impl System {
         System {
             heap: Heap::new(),
             pc: heap::ROM_START,
-            // i: 0,
+            i: 0,
             // stack: [0; 64],
             frame_buffer: [[false; 64]; 32],
             // delay: 0,
@@ -56,13 +56,15 @@ impl System {
                     vx, value
                 );
             }
-            OpCode::ADD { vx, value } => {
+            OpCode::ADDVx { vx, value } => {
+                self.registers[vx as usize] += value;
                 println!(
                     "ADD called for register V{:#06X} and value {:#06X}",
                     vx, value
                 );
             }
             OpCode::LDI(value) => {
+                self.i = value;
                 println!("LDI called with value {:#06X}", value);
             }
             OpCode::DRW { vx, vy, value } => {
@@ -81,6 +83,18 @@ impl System {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn fetch() {
+        let mut system = System::new();
+        // CLS
+        system.heap.set_byte(0x0200, 0x0000);
+        system.heap.set_byte(0x0201, 0x00E0);
+
+        let result = system.fetch();
+
+        assert_eq!(result, 0x00E0);
+        assert_eq!(system.pc, 0x0202);
+    }
 
     #[test]
     fn cls() {
@@ -113,5 +127,27 @@ mod tests {
         });
 
         assert_eq!(0x0012, system.registers[0x000F]);
+    }
+
+    #[test]
+    fn add_vx() {
+        let mut system = System::new();
+        system.registers[0x000A] = 0x00AB;
+
+        system.execute(&OpCode::ADDVx {
+            vx: 0x000A,
+            value: 0x0001,
+        });
+
+        assert_eq!(0x00AC, system.registers[0x000A]);
+    }
+
+    #[test]
+    fn ldi() {
+        let mut system = System::new();
+
+        system.execute(&OpCode::LDI(0x0123));
+
+        assert_eq!(0x0123, system.i);
     }
 }

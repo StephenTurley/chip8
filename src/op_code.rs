@@ -3,7 +3,7 @@ pub enum OpCode {
     CLS,
     JMP(u16),
     LDVx { vx: u8, value: u8 },
-    ADD { vx: u8, value: u8 },
+    ADDVx { vx: u8, value: u8 },
     LDI(u16),
     DRW { vx: u8, vy: u8, value: u8 },
     Unknown,
@@ -18,7 +18,7 @@ pub fn decode(op: u16) -> OpCode {
                 vx: ((op & 0x0F00) >> 8) as u8,
                 value: (op & 0x00FF) as u8,
             },
-            0x7000 => OpCode::ADD {
+            0x7000 => OpCode::ADDVx {
                 vx: ((op & 0x0F00) >> 8) as u8,
                 value: (op & 0x00FF) as u8,
             },
@@ -77,7 +77,7 @@ mod tests {
     fn add() {
         let result = decode(0x7234);
         assert_eq!(
-            OpCode::ADD {
+            OpCode::ADDVx {
                 vx: 0x0002,
                 value: 0x0034
             },
