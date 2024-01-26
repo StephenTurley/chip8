@@ -46,6 +46,7 @@ impl System {
                 println!("CLS called");
             }
             OpCode::JMP(addr) => {
+                self.pc = addr;
                 println!("JMP called with address {:#06X}", addr);
             }
             OpCode::LDVx { vx, value } => {
@@ -90,5 +91,14 @@ mod tests {
         system.execute(&OpCode::CLS);
 
         assert_eq!([[false; 64]; 32], system.frame_buffer);
+    }
+
+    #[test]
+    fn jmp() {
+        let mut system = System::new();
+
+        system.execute(&OpCode::JMP(0x0555));
+
+        assert_eq!(0x0555, system.pc);
     }
 }
