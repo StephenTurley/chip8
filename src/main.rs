@@ -5,6 +5,7 @@ mod op_code;
 use emulator::System;
 use op_code::OpCode;
 use std::env;
+use std::time::Instant;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -14,18 +15,24 @@ fn main() {
     let rom_path = &args[1];
 
     let mut system: System = System::init(rom_path);
+    let mut cycle_start = Instant::now();
+
     loop {
-        // fetch
-        let op = system.fetch();
+        // run at 60hz
+        if cycle_start.elapsed().as_micros() >= 16_600 {
+            cycle_start = Instant::now();
+            // fetch
+            let op = system.fetch();
 
-        // decode
-        let op_code: OpCode = op_code::decode(op);
-        if op_code == OpCode::Unknown {
-            break;
+            // decode
+            let op_code: OpCode = op_code::decode(op);
+            if op_code == OpCode::Unknown {
+                break;
+            }
+
+            //execute
+            system.execute(&op_code);
         }
-
-        //execute
-        system.execute(&op_code);
     }
     println!("End of program");
 }

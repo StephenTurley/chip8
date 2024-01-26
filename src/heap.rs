@@ -32,6 +32,8 @@ impl Heap {
         Heap { mem: [0; 4096] }
     }
 
+    // used for testing... for now hopefully
+    #[allow(dead_code)]
     pub fn set_byte(&mut self, addr: usize, value: u8) {
         self.mem[addr] = value;
     }
