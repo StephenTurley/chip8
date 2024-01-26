@@ -10,7 +10,7 @@ pub struct System {
     frame_buffer: [[bool; 64]; 32],
     // delay: u8,
     // sound: u8,
-    // registers: [u8; 16],
+    registers: [u8; 16],
 }
 impl System {
     pub fn new() -> System {
@@ -22,7 +22,7 @@ impl System {
             frame_buffer: [[false; 64]; 32],
             // delay: 0,
             // sound: 0,
-            // registers: [0; 16],
+            registers: [0; 16],
         }
     }
 
@@ -50,6 +50,7 @@ impl System {
                 println!("JMP called with address {:#06X}", addr);
             }
             OpCode::LDVx { vx, value } => {
+                self.registers[vx as usize] = value;
                 println!(
                     "LDV called for register V{:#06X}, and value {:#06X}",
                     vx, value
@@ -100,5 +101,17 @@ mod tests {
         system.execute(&OpCode::JMP(0x0555));
 
         assert_eq!(0x0555, system.pc);
+    }
+
+    #[test]
+    fn ld_vx() {
+        let mut system = System::new();
+
+        system.execute(&OpCode::LDVx {
+            vx: 0x000F,
+            value: 0x0012,
+        });
+
+        assert_eq!(0x0012, system.registers[0x000F]);
     }
 }
