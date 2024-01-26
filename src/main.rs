@@ -25,7 +25,7 @@ fn main() {
         }
 
         //execute
-        dbg!(op_code);
+        system.execute(&op_code);
     }
     println!("End of program");
 }
