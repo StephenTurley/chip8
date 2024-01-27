@@ -5,7 +5,7 @@ pub enum OpCode {
     LDVx { vx: u8, value: u8 },
     ADDVx { vx: u8, value: u8 },
     LDI(u16),
-    DRW { vx: u8, vy: u8, value: u8 },
+    DRW { vx: u8, vy: u8, n: u8 },
     Unknown,
 }
 
@@ -26,7 +26,7 @@ pub fn decode(op: u16) -> OpCode {
             0xD000 => OpCode::DRW {
                 vx: ((op & 0x0F00) >> 8) as u8,
                 vy: ((op & 0x00F0) >> 4) as u8,
-                value: (op & 0x000F) as u8,
+                n: (op & 0x000F) as u8,
             },
             _ => OpCode::Unknown,
         },
@@ -92,7 +92,7 @@ mod tests {
             OpCode::DRW {
                 vx: 0x000A,
                 vy: 0x000B,
-                value: 0x0001
+                n: 0x0001
             },
             result
         );
