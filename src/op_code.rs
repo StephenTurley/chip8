@@ -7,6 +7,7 @@ pub enum OpCode {
     LDVx { vx: usize, value: u8 },
     LDVxVy { vx: usize, vy: usize },
     ORVxVy { vx: usize, vy: usize },
+    ANDVxVy { vx: usize, vy: usize },
     ADDVx { vx: usize, value: u8 },
     LDI(u16),
     DRW { vx: usize, vy: usize, n: usize },
@@ -21,6 +22,7 @@ impl Display for OpCode {
             OpCode::LDVx { vx, value } => write!(f, "LD VX:{:#06X} value:{:#06X}", vx, value),
             OpCode::LDVxVy { vx, vy } => write!(f, "LD VX:{:#06X} VY:{:#06X}", vx, vy),
             OpCode::ORVxVy { vx, vy } => write!(f, "OR VX:{:#06X} VY:{:#06X}", vx, vy),
+            OpCode::ANDVxVy { vx, vy } => write!(f, "AND VX:{:#06X} VY:{:#06X}", vx, vy),
             OpCode::ADDVx { vx, value } => write!(f, "ADD VX:{:#06X} value:{:#06X}", vx, value),
             OpCode::LDI(value) => write!(f, "LDI value:{:#06X}", value),
             OpCode::DRW { vx, vy, n } => {
@@ -50,6 +52,10 @@ pub fn decode(op: u16) -> OpCode {
                     vy: ((op & 0x00F0) >> 4) as usize,
                 },
                 0x0001 => OpCode::ORVxVy {
+                    vx: ((op & 0x0F00) >> 8) as usize,
+                    vy: ((op & 0x00F0) >> 4) as usize,
+                },
+                0x0002 => OpCode::ANDVxVy {
                     vx: ((op & 0x0F00) >> 8) as usize,
                     vy: ((op & 0x00F0) >> 4) as usize,
                 },
@@ -141,6 +147,19 @@ mod tests {
             result
         );
     }
+
+    #[test]
+    fn and_vx_vy() {
+        let result = decode(0x8A12);
+        assert_eq!(
+            OpCode::ANDVxVy {
+                vx: 0x000A,
+                vy: 0x0001,
+            },
+            result
+        );
+    }
+
     #[test]
     fn drw() {
         let result = decode(0xDAB1);

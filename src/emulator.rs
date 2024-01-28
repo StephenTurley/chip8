@@ -46,6 +46,7 @@ impl System {
             OpCode::LDVx { vx, value } => self.v[vx] = value,
             OpCode::LDVxVy { vx, vy } => self.v[vx] = self.v[vy],
             OpCode::ORVxVy { vx, vy } => self.v[vx] = self.v[vx] | self.v[vy],
+            OpCode::ANDVxVy { vx, vy } => self.v[vx] = self.v[vx] & self.v[vy],
             OpCode::ADDVx { vx, value } => self.v[vx] += value,
             OpCode::LDI(value) => self.i = value,
             OpCode::DRW { vx, vy, n } => {
@@ -178,6 +179,20 @@ mod tests {
         });
 
         assert_eq!(0xFF, system.v[0x000F]);
+    }
+
+    #[test]
+    fn and_vx_vy() {
+        let mut system = System::new();
+        system.v[0x000F] = 0xFF;
+        system.v[0x000A] = 0x1F;
+
+        system.execute(&OpCode::ANDVxVy {
+            vx: 0x000F,
+            vy: 0x000A,
+        });
+
+        assert_eq!(0x1F, system.v[0x000F]);
     }
 
     #[test]
