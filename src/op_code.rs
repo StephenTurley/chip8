@@ -8,6 +8,9 @@ pub enum OpCode {
     LDVxVy { vx: usize, vy: usize },
     ORVxVy { vx: usize, vy: usize },
     ANDVxVy { vx: usize, vy: usize },
+    XORVxVy { vx: usize, vy: usize },
+    ADDVxVy { vx: usize, vy: usize },
+    SUBVxVy { vx: usize, vy: usize },
     ADDVx { vx: usize, value: u8 },
     LDI(u16),
     DRW { vx: usize, vy: usize, n: usize },
@@ -23,6 +26,9 @@ impl Display for OpCode {
             OpCode::LDVxVy { vx, vy } => write!(f, "LD VX:{:#06X} VY:{:#06X}", vx, vy),
             OpCode::ORVxVy { vx, vy } => write!(f, "OR VX:{:#06X} VY:{:#06X}", vx, vy),
             OpCode::ANDVxVy { vx, vy } => write!(f, "AND VX:{:#06X} VY:{:#06X}", vx, vy),
+            OpCode::XORVxVy { vx, vy } => write!(f, "XOR VX:{:#06X} VY:{:#06X}", vx, vy),
+            OpCode::ADDVxVy { vx, vy } => write!(f, "ADD VX:{:#06X} VY:{:#06X}", vx, vy),
+            OpCode::SUBVxVy { vx, vy } => write!(f, "SUB VX:{:#06X} VY:{:#06X}", vx, vy),
             OpCode::ADDVx { vx, value } => write!(f, "ADD VX:{:#06X} value:{:#06X}", vx, value),
             OpCode::LDI(value) => write!(f, "LDI value:{:#06X}", value),
             OpCode::DRW { vx, vy, n } => {
@@ -56,6 +62,18 @@ pub fn decode(op: u16) -> OpCode {
                     vy: ((op & 0x00F0) >> 4) as usize,
                 },
                 0x0002 => OpCode::ANDVxVy {
+                    vx: ((op & 0x0F00) >> 8) as usize,
+                    vy: ((op & 0x00F0) >> 4) as usize,
+                },
+                0x0003 => OpCode::XORVxVy {
+                    vx: ((op & 0x0F00) >> 8) as usize,
+                    vy: ((op & 0x00F0) >> 4) as usize,
+                },
+                0x0004 => OpCode::ADDVxVy {
+                    vx: ((op & 0x0F00) >> 8) as usize,
+                    vy: ((op & 0x00F0) >> 4) as usize,
+                },
+                0x0005 => OpCode::SUBVxVy {
                     vx: ((op & 0x0F00) >> 8) as usize,
                     vy: ((op & 0x00F0) >> 4) as usize,
                 },
@@ -153,6 +171,42 @@ mod tests {
         let result = decode(0x8A12);
         assert_eq!(
             OpCode::ANDVxVy {
+                vx: 0x000A,
+                vy: 0x0001,
+            },
+            result
+        );
+    }
+
+    #[test]
+    fn xor_vx_vy() {
+        let result = decode(0x8A13);
+        assert_eq!(
+            OpCode::XORVxVy {
+                vx: 0x000A,
+                vy: 0x0001,
+            },
+            result
+        );
+    }
+
+    #[test]
+    fn add_vx_vy() {
+        let result = decode(0x8A14);
+        assert_eq!(
+            OpCode::ADDVxVy {
+                vx: 0x000A,
+                vy: 0x0001,
+            },
+            result
+        );
+    }
+
+    #[test]
+    fn sub_vx_vy() {
+        let result = decode(0x8A15);
+        assert_eq!(
+            OpCode::SUBVxVy {
                 vx: 0x000A,
                 vy: 0x0001,
             },

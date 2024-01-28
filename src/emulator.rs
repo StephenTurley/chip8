@@ -47,6 +47,14 @@ impl System {
             OpCode::LDVxVy { vx, vy } => self.v[vx] = self.v[vy],
             OpCode::ORVxVy { vx, vy } => self.v[vx] = self.v[vx] | self.v[vy],
             OpCode::ANDVxVy { vx, vy } => self.v[vx] = self.v[vx] & self.v[vy],
+            OpCode::XORVxVy { vx, vy } => self.v[vx] = self.v[vx] ^ self.v[vy],
+            OpCode::ADDVxVy { vx, vy } => self.v[vx] = self.v[vx] + self.v[vy],
+            OpCode::SUBVxVy { vx, vy } => {
+                let x = self.v[vx];
+                let y = self.v[vy];
+                self.v[vx] = x - y;
+                self.v[0x000F] = if x > y { 1 } else { 0 };
+            }
             OpCode::ADDVx { vx, value } => self.v[vx] += value,
             OpCode::LDI(value) => self.i = value,
             OpCode::DRW { vx, vy, n } => {
@@ -143,6 +151,19 @@ mod tests {
     }
 
     #[test]
+    fn add_vx() {
+        let mut system = System::new();
+        system.v[0x000A] = 0x00AB;
+
+        system.execute(&OpCode::ADDVx {
+            vx: 0x000A,
+            value: 0x0001,
+        });
+
+        assert_eq!(0x00AC, system.v[0x000A]);
+    }
+
+    #[test]
     fn ld_vx() {
         let mut system = System::new();
 
@@ -196,16 +217,59 @@ mod tests {
     }
 
     #[test]
-    fn add_vx() {
+    fn xor_vx_vy() {
         let mut system = System::new();
-        system.v[0x000A] = 0x00AB;
+        system.v[0x000F] = 0x44; // 01000100
+        system.v[0x000A] = 0x51; // 01010001 XOR
+                                 // ------------
+                                 // 00010101
+                                 // 0x15
 
-        system.execute(&OpCode::ADDVx {
-            vx: 0x000A,
-            value: 0x0001,
+        system.execute(&OpCode::XORVxVy {
+            vx: 0x000F,
+            vy: 0x000A,
         });
 
-        assert_eq!(0x00AC, system.v[0x000A]);
+        assert_eq!(0x15, system.v[0x000F]);
+    }
+
+    #[test]
+    fn add_vx_vy() {
+        let mut system = System::new();
+        system.v[0x000F] = 0x05;
+        system.v[0x000A] = 0x01;
+
+        system.execute(&OpCode::ADDVxVy {
+            vx: 0x000F,
+            vy: 0x000A,
+        });
+
+        assert_eq!(0x06, system.v[0x000F]);
+    }
+
+    #[test]
+    fn sub_vx_vy() {
+        // 8xy5 - SUB Vx, Vy
+        // Set Vx = Vx - Vy, set VF = NOT borrow.
+        // If Vx > Vy, then VF is set to 1, otherwise 0. Then Vy is subtracted from Vx, and the results stored in Vx.
+        let mut system = System::new();
+        system.v[0x000D] = 0x05; //vx
+        system.v[0x000A] = 0x01; //vy
+
+        system.execute(&OpCode::SUBVxVy {
+            vx: 0x000D,
+            vy: 0x000A,
+        });
+
+        assert_eq!(0x04, system.v[0x000D]);
+        assert_eq!(0x1, system.v[0x000F], "must set borrow bit");
+
+        let mut system = System::new();
+        system.v[0x000D] = 0x01; //vx
+        system.v[0x000A] = 0x05; //vy
+                                 //
+        assert_eq!(0x01, system.v[0x000D]);
+        assert_eq!(0x0, system.v[0x000F], "do not set borrow bit if x > y");
     }
 
     #[test]
