@@ -1,12 +1,32 @@
+use std::fmt::Display;
+
 #[derive(Debug, PartialEq)]
 pub enum OpCode {
     CLS,
     JMP(u16),
     LDVx { vx: u8, value: u8 },
+    LDVxVy { vx: u8, vy: u8 },
     ADDVx { vx: u8, value: u8 },
     LDI(u16),
     DRW { vx: u8, vy: u8, n: u8 },
     Unknown,
+}
+
+impl Display for OpCode {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match *self {
+            OpCode::CLS => write!(f, "CLS"),
+            OpCode::JMP(addr) => write!(f, "JMP address:{:#06X}", addr),
+            OpCode::LDVx { vx, value } => write!(f, "LDVx VX:{:#06X} value:{:#06X}", vx, value),
+            OpCode::LDVxVy { vx, vy } => write!(f, "LDVxVy VX:{:#06X} VY:{:#06X}", vx, vy),
+            OpCode::ADDVx { vx, value } => write!(f, "ADD VX:{:#06X} value:{:#06X}", vx, value),
+            OpCode::LDI(value) => write!(f, "LDI value:{:#06X}", value),
+            OpCode::DRW { vx, vy, n } => {
+                write!(f, "DRW VX:{:#06X} VX:{:#06X} n:{:#06X}", vx, vy, n)
+            }
+            OpCode::Unknown => write!(f, "Unknown"),
+        }
+    }
 }
 
 pub fn decode(op: u16) -> OpCode {
@@ -21,6 +41,10 @@ pub fn decode(op: u16) -> OpCode {
             0x7000 => OpCode::ADDVx {
                 vx: ((op & 0x0F00) >> 8) as u8,
                 value: (op & 0x00FF) as u8,
+            },
+            0x8000 => OpCode::LDVxVy {
+                vx: ((op & 0x0F00) >> 8) as u8,
+                vy: ((op & 0x00F0) >> 4) as u8,
             },
             0xA000 => OpCode::LDI(op & 0x0FFF),
             0xD000 => OpCode::DRW {
@@ -85,6 +109,17 @@ mod tests {
         );
     }
 
+    #[test]
+    fn ld_vx_vy() {
+        let result = decode(0x8A10);
+        assert_eq!(
+            OpCode::LDVxVy {
+                vx: 0x000A,
+                vy: 0x0001,
+            },
+            result
+        );
+    }
     #[test]
     fn drw() {
         let result = decode(0xDAB1);

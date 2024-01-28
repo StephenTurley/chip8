@@ -25,7 +25,9 @@ fn main() {
             let op = system.fetch();
 
             let op_code: OpCode = op_code::decode(op);
+            println!("{}", op_code);
             if op_code == OpCode::Unknown {
+                println!("Invalid OpCode {:#06X}", op);
                 break;
             }
 

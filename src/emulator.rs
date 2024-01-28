@@ -41,43 +41,17 @@ impl System {
 
     pub fn execute(&mut self, op: &OpCode) {
         match *op {
-            OpCode::CLS => {
-                println!("CLS called");
-                self.frame_buffer = [[false; 64]; 32];
-            }
-            OpCode::JMP(addr) => {
-                self.pc = addr;
-                // println!("JMP called with address {:#06X}", addr);
-            }
-            OpCode::LDVx { vx, value } => {
-                println!(
-                    "LDV called for register V{:#06X}, and value {:#06X}",
-                    vx, value
-                );
-                self.registers[vx as usize] = value;
-            }
-            OpCode::ADDVx { vx, value } => {
-                println!(
-                    "ADD called for register V{:#06X} and value {:#06X}",
-                    vx, value
-                );
-                self.registers[vx as usize] += value;
-            }
-            OpCode::LDI(value) => {
-                println!("LDI called with value {:#06X}", value);
-                self.i = value;
-            }
+            OpCode::CLS => self.frame_buffer = [[false; 64]; 32],
+            OpCode::JMP(addr) => self.pc = addr,
+            OpCode::LDVx { vx, value } => self.registers[vx as usize] = value,
+            OpCode::LDVxVy { vx, vy } => self.registers[vx as usize] = self.registers[vy as usize],
+            OpCode::ADDVx { vx, value } => self.registers[vx as usize] += value,
+            OpCode::LDI(value) => self.i = value,
             OpCode::DRW { vx, vy, n } => {
-                println!(
-                    "DRW called with VX{:#06X}, VY{:#06X}, and value  {:#06X}",
-                    vx, vy, n
-                );
                 self.update_frame_buffer(vx as usize, vy as usize, n as usize);
                 self.render();
             }
-            OpCode::Unknown => {
-                println!("Unknown OpCode");
-            }
+            OpCode::Unknown => {}
         };
     }
 
@@ -176,6 +150,19 @@ mod tests {
         });
 
         assert_eq!(0x0012, system.registers[0x000F]);
+    }
+
+    #[test]
+    fn ld_vx_vy() {
+        let mut system = System::new();
+        system.registers[0x000A] = 0xBE;
+
+        system.execute(&OpCode::LDVxVy {
+            vx: 0x000F,
+            vy: 0x000A,
+        });
+
+        assert_eq!(0xBE, system.registers[0x000F]);
     }
 
     #[test]
