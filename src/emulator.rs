@@ -10,7 +10,7 @@ pub struct System {
     frame_buffer: [[bool; 64]; 32], //indexed [y][x]; top left [0][0]; bottom right [31, 63]
     // delay: u8,
     // sound: u8,
-    registers: [u8; 16],
+    v: [u8; 16],
 }
 impl System {
     pub fn new() -> System {
@@ -22,7 +22,7 @@ impl System {
             frame_buffer: [[false; 64]; 32],
             // delay: 0,
             // sound: 0,
-            registers: [0; 16],
+            v: [0; 16],
         }
     }
 
@@ -43,12 +43,12 @@ impl System {
         match *op {
             OpCode::CLS => self.frame_buffer = [[false; 64]; 32],
             OpCode::JMP(addr) => self.pc = addr,
-            OpCode::LDVx { vx, value } => self.registers[vx as usize] = value,
-            OpCode::LDVxVy { vx, vy } => self.registers[vx as usize] = self.registers[vy as usize],
-            OpCode::ADDVx { vx, value } => self.registers[vx as usize] += value,
+            OpCode::LDVx { vx, value } => self.v[vx] = value,
+            OpCode::LDVxVy { vx, vy } => self.v[vx] = self.v[vy],
+            OpCode::ADDVx { vx, value } => self.v[vx] += value,
             OpCode::LDI(value) => self.i = value,
             OpCode::DRW { vx, vy, n } => {
-                self.update_frame_buffer(vx as usize, vy as usize, n as usize);
+                self.update_frame_buffer(vx, vy, n);
                 self.render();
             }
             OpCode::Unknown => {}
@@ -69,13 +69,13 @@ impl System {
 
     fn update_frame_buffer(&mut self, vx: usize, vy: usize, sprite_rows: usize) {
         //fetch screen coordinates
-        let start_x = self.registers[vx] % 64; // allow the start_x to wrap using modulo
-        let start_y = self.registers[vy] % 32; // allow the start_y to wrap using modulo
+        let start_x = self.v[vx] % 64; // allow the start_x to wrap using modulo
+        let start_y = self.v[vy] % 32; // allow the start_y to wrap using modulo
 
         let sprite_ref: usize = self.i.into();
 
         //set collision to 0
-        self.registers[0x000F as usize] = 0;
+        self.v[0x000F as usize] = 0;
 
         for row in 0..sprite_rows {
             let y = start_y + row as u8;
@@ -93,7 +93,7 @@ impl System {
 
                     // if the current pixel collides with old_pixel, set the collision flag
                     if old_pixel && pixel {
-                        self.registers[0xF] = 1;
+                        self.v[0xF] = 1;
                     }
 
                     self.frame_buffer[y as usize][x as usize] = new_pixel;
@@ -149,33 +149,33 @@ mod tests {
             value: 0x0012,
         });
 
-        assert_eq!(0x0012, system.registers[0x000F]);
+        assert_eq!(0x0012, system.v[0x000F]);
     }
 
     #[test]
     fn ld_vx_vy() {
         let mut system = System::new();
-        system.registers[0x000A] = 0xBE;
+        system.v[0x000A] = 0xBE;
 
         system.execute(&OpCode::LDVxVy {
             vx: 0x000F,
             vy: 0x000A,
         });
 
-        assert_eq!(0xBE, system.registers[0x000F]);
+        assert_eq!(0xBE, system.v[0x000F]);
     }
 
     #[test]
     fn add_vx() {
         let mut system = System::new();
-        system.registers[0x000A] = 0x00AB;
+        system.v[0x000A] = 0x00AB;
 
         system.execute(&OpCode::ADDVx {
             vx: 0x000A,
             value: 0x0001,
         });
 
-        assert_eq!(0x00AC, system.registers[0x000A]);
+        assert_eq!(0x00AC, system.v[0x000A]);
     }
 
     #[test]

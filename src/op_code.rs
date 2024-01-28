@@ -4,11 +4,11 @@ use std::fmt::Display;
 pub enum OpCode {
     CLS,
     JMP(u16),
-    LDVx { vx: u8, value: u8 },
-    LDVxVy { vx: u8, vy: u8 },
-    ADDVx { vx: u8, value: u8 },
+    LDVx { vx: usize, value: u8 },
+    LDVxVy { vx: usize, vy: usize },
+    ADDVx { vx: usize, value: u8 },
     LDI(u16),
-    DRW { vx: u8, vy: u8, n: u8 },
+    DRW { vx: usize, vy: usize, n: usize },
     Unknown,
 }
 
@@ -35,22 +35,22 @@ pub fn decode(op: u16) -> OpCode {
         _ => match op & 0xF000 {
             0x1000 => OpCode::JMP(op & 0x0FFF),
             0x6000 => OpCode::LDVx {
-                vx: ((op & 0x0F00) >> 8) as u8,
+                vx: ((op & 0x0F00) >> 8) as usize,
                 value: (op & 0x00FF) as u8,
             },
             0x7000 => OpCode::ADDVx {
-                vx: ((op & 0x0F00) >> 8) as u8,
+                vx: ((op & 0x0F00) >> 8) as usize,
                 value: (op & 0x00FF) as u8,
             },
             0x8000 => OpCode::LDVxVy {
-                vx: ((op & 0x0F00) >> 8) as u8,
-                vy: ((op & 0x00F0) >> 4) as u8,
+                vx: ((op & 0x0F00) >> 8) as usize,
+                vy: ((op & 0x00F0) >> 4) as usize,
             },
             0xA000 => OpCode::LDI(op & 0x0FFF),
             0xD000 => OpCode::DRW {
-                vx: ((op & 0x0F00) >> 8) as u8,
-                vy: ((op & 0x00F0) >> 4) as u8,
-                n: (op & 0x000F) as u8,
+                vx: ((op & 0x0F00) >> 8) as usize,
+                vy: ((op & 0x00F0) >> 4) as usize,
+                n: (op & 0x000F) as usize,
             },
             _ => OpCode::Unknown,
         },
