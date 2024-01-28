@@ -45,6 +45,7 @@ impl System {
             OpCode::JMP(addr) => self.pc = addr,
             OpCode::LDVx { vx, value } => self.v[vx] = value,
             OpCode::LDVxVy { vx, vy } => self.v[vx] = self.v[vy],
+            OpCode::ORVxVy { vx, vy } => self.v[vx] = self.v[vx] | self.v[vy],
             OpCode::ADDVx { vx, value } => self.v[vx] += value,
             OpCode::LDI(value) => self.i = value,
             OpCode::DRW { vx, vy, n } => {
@@ -163,6 +164,20 @@ mod tests {
         });
 
         assert_eq!(0xBE, system.v[0x000F]);
+    }
+
+    #[test]
+    fn or_vx_vy() {
+        let mut system = System::new();
+        system.v[0x000F] = 0xF0;
+        system.v[0x000A] = 0x0F;
+
+        system.execute(&OpCode::ORVxVy {
+            vx: 0x000F,
+            vy: 0x000A,
+        });
+
+        assert_eq!(0xFF, system.v[0x000F]);
     }
 
     #[test]
