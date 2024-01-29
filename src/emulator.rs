@@ -68,7 +68,7 @@ impl System {
                 let x = self.v[vx];
                 let lsd = x & 0x01;
                 self.v[0xF] = lsd;
-                self.v[vx] = (x >> 1) / 2;
+                self.v[vx] = x >> 1;
             }
             OpCode::ADDVx { vx, value } => self.v[vx] += value,
             OpCode::LDI(value) => self.i = value,
@@ -334,7 +334,7 @@ mod tests {
             vy: 0x000B,
         });
 
-        assert_eq!(0x02 / 2, system.v[0x000A]);
+        assert_eq!(0x02, system.v[0x000A]);
         assert_eq!(
             0x01, system.v[0x000F],
             "should set v[0xF] to 1 since its the LSD"
