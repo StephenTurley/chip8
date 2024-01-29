@@ -68,7 +68,7 @@ impl System {
                 let x = self.v[vx];
                 let lsd = x & 0x01;
                 self.v[0xF] = lsd;
-                self.v[vx] = x >> 1;
+                self.v[vx] = (x >> 1) / 2;
             }
             OpCode::ADDVx { vx, value } => self.v[vx] += value,
             OpCode::LDI(value) => self.i = value,
@@ -312,7 +312,7 @@ mod tests {
         let mut system = System::new();
         system.v[0x000D] = 0x05; //vx
         system.v[0x000A] = 0x01; //vy
-                                 //
+
         system.execute(&OpCode::SUBn {
             vx: 0x000D,
             vy: 0x000A,
@@ -324,6 +324,7 @@ mod tests {
 
     #[test]
     fn shr() {
+        // If the least-significant bit of Vx is 1, then VF is set to 1, otherwise 0. Then Vx is divided by 2.
         let mut system = System::new();
         system.v[0x000A] = 0x05; // vx 00000101
         system.v[0x000B] = 0x01; // vy, ignored in this impl
@@ -333,7 +334,7 @@ mod tests {
             vy: 0x000B,
         });
 
-        assert_eq!(0x02, system.v[0x000A]);
+        assert_eq!(0x02 / 2, system.v[0x000A]);
         assert_eq!(
             0x01, system.v[0x000F],
             "should set v[0xF] to 1 since its the LSD"
