@@ -70,6 +70,13 @@ impl System {
                 self.v[0xF] = lsd;
                 self.v[vx] = x >> 1;
             }
+            OpCode::SHL { vx, vy: _vy } => {
+                // same as SHR wrt impl
+                let x = self.v[vx];
+                let msd = (x & 0x8F) >> 7;
+                self.v[0xF] = msd;
+                self.v[vx] = x << 1;
+            }
             OpCode::ADDVx { vx, value } => self.v[vx] += value,
             OpCode::LDI(value) => self.i = value,
             OpCode::DRW { vx, vy, n } => {
@@ -324,7 +331,8 @@ mod tests {
 
     #[test]
     fn shr() {
-        // If the least-significant bit of Vx is 1, then VF is set to 1, otherwise 0. Then Vx is divided by 2.
+        // If the least-significant bit of Vx is 1, then VF is set to 1, otherwise 0. Then Vx is
+        // shifted right by 1
         let mut system = System::new();
         system.v[0x000A] = 0x05; // vx 00000101
         system.v[0x000B] = 0x01; // vy, ignored in this impl
@@ -338,6 +346,54 @@ mod tests {
         assert_eq!(
             0x01, system.v[0x000F],
             "should set v[0xF] to 1 since its the LSD"
+        );
+
+        system.v[0x000A] = 0x08; // vx 00001000
+        system.v[0x000B] = 0x01; // vy, ignored in this impl
+
+        system.execute(&OpCode::SHR {
+            vx: 0x000A,
+            vy: 0x000B,
+        });
+
+        assert_eq!(0x04, system.v[0x000A]);
+        assert_eq!(
+            0x0, system.v[0x000F],
+            "should set v[0xF] to 0 since its the LSD"
+        );
+    }
+
+    #[test]
+    fn shl() {
+        // If the most-significant bit of Vx is 1, then VF is set to 1, otherwise to 0. Then Vx is
+        // shifted left by 1
+        let mut system = System::new();
+        system.v[0x000A] = 0x05; // vx 00000101
+        system.v[0x000B] = 0x01; // vy, ignored in this impl
+
+        system.execute(&OpCode::SHL {
+            vx: 0x000A,
+            vy: 0x000B,
+        });
+
+        assert_eq!(0x0A, system.v[0x000A]);
+        assert_eq!(
+            0x0, system.v[0x000F],
+            "should set v[0xF] to 0 since its the MSD"
+        );
+
+        system.v[0x000A] = 0x90; // vx 10010000
+        system.v[0x000B] = 0x01; // vy, ignored in this impl
+
+        system.execute(&OpCode::SHL {
+            vx: 0x000A,
+            vy: 0x000B,
+        });
+
+        assert_eq!(0x20, system.v[0x000A]);
+        assert_eq!(
+            0x01, system.v[0x000F],
+            "should set v[0xF] to 1 since its the MSD"
         );
     }
 

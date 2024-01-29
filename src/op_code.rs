@@ -13,6 +13,7 @@ pub enum OpCode {
     SUB { vx: usize, vy: usize },
     SUBn { vx: usize, vy: usize },
     SHR { vx: usize, vy: usize },
+    SHL { vx: usize, vy: usize },
     ADDVx { vx: usize, value: u8 },
     LDI(u16),
     DRW { vx: usize, vy: usize, n: usize },
@@ -33,6 +34,7 @@ impl Display for OpCode {
             OpCode::SUB { vx, vy } => write!(f, "SUB VX:{:#06X} VY:{:#06X}", vx, vy),
             OpCode::SUBn { vx, vy } => write!(f, "SUBn VX:{:#06X} VY:{:#06X}", vx, vy),
             OpCode::SHR { vx, vy } => write!(f, "SHR VX:{:#06X} VY:{:#06X}", vx, vy),
+            OpCode::SHL { vx, vy } => write!(f, "SHL VX:{:#06X} VY:{:#06X}", vx, vy),
             OpCode::ADDVx { vx, value } => write!(f, "ADD VX:{:#06X} value:{:#06X}", vx, value),
             OpCode::LDI(value) => write!(f, "LDI value:{:#06X}", value),
             OpCode::DRW { vx, vy, n } => {
@@ -86,6 +88,10 @@ pub fn decode(op: u16) -> OpCode {
                     vy: ((op & 0x00F0) >> 4) as usize,
                 },
                 0x0007 => OpCode::SUBn {
+                    vx: ((op & 0x0F00) >> 8) as usize,
+                    vy: ((op & 0x00F0) >> 4) as usize,
+                },
+                0x000E => OpCode::SHL {
                     vx: ((op & 0x0F00) >> 8) as usize,
                     vy: ((op & 0x00F0) >> 4) as usize,
                 },
@@ -243,6 +249,18 @@ mod tests {
         let result = decode(0x8A16);
         assert_eq!(
             OpCode::SHR {
+                vx: 0x000A,
+                vy: 0x0001,
+            },
+            result
+        );
+    }
+
+    #[test]
+    fn shl() {
+        let result = decode(0x8A1E);
+        assert_eq!(
+            OpCode::SHL {
                 vx: 0x000A,
                 vy: 0x0001,
             },
