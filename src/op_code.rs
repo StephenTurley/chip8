@@ -15,6 +15,7 @@ pub enum OpCode {
     SHR { vx: usize, vy: usize },
     SHL { vx: usize, vy: usize },
     ADDVx { vx: usize, value: u8 },
+    SNE { vx: usize, vy: usize },
     LDI(u16),
     DRW { vx: usize, vy: usize, n: usize },
     Unknown,
@@ -36,6 +37,7 @@ impl Display for OpCode {
             OpCode::SHR { vx, vy } => write!(f, "SHR VX:{:#06X} VY:{:#06X}", vx, vy),
             OpCode::SHL { vx, vy } => write!(f, "SHL VX:{:#06X} VY:{:#06X}", vx, vy),
             OpCode::ADDVx { vx, value } => write!(f, "ADD VX:{:#06X} value:{:#06X}", vx, value),
+            OpCode::SNE { vx, vy } => write!(f, "SNE VX:{:#06X} VY:{:#06X}", vx, vy),
             OpCode::LDI(value) => write!(f, "LDI value:{:#06X}", value),
             OpCode::DRW { vx, vy, n } => {
                 write!(f, "DRW VX:{:#06X} VX:{:#06X} n:{:#06X}", vx, vy, n)
@@ -96,6 +98,13 @@ pub fn decode(op: u16) -> OpCode {
                     vy: ((op & 0x00F0) >> 4) as usize,
                 },
                 _ => OpCode::Unknown,
+            },
+            0x9000 => OpCode::SNE {
+                // may need to check that the last byte is also zero... here
+                // its masked out, but its the only op withe a MSD of 9 in the
+                // spec so I didn't check it.
+                vx: ((op & 0x0F00) >> 8) as usize,
+                vy: ((op & 0x00F0) >> 4) as usize,
             },
             0xA000 => OpCode::LDI(op & 0x0FFF),
             0xD000 => OpCode::DRW {
@@ -261,6 +270,18 @@ mod tests {
         let result = decode(0x8A1E);
         assert_eq!(
             OpCode::SHL {
+                vx: 0x000A,
+                vy: 0x0001,
+            },
+            result
+        );
+    }
+
+    #[test]
+    fn sne() {
+        let result = decode(0x9A10);
+        assert_eq!(
+            OpCode::SNE {
                 vx: 0x000A,
                 vy: 0x0001,
             },

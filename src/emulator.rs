@@ -45,6 +45,7 @@ impl System {
             OpCode::JMP(addr) => self.pc = addr,
             OpCode::LDVx { vx, value } => self.v[vx] = value,
             OpCode::LDVxVy { vx, vy } => self.v[vx] = self.v[vy],
+            OpCode::LDI(value) => self.i = value,
             OpCode::ORVxVy { vx, vy } => self.v[vx] = self.v[vx] | self.v[vy],
             OpCode::ANDVxVy { vx, vy } => self.v[vx] = self.v[vx] & self.v[vy],
             OpCode::XORVxVy { vx, vy } => self.v[vx] = self.v[vx] ^ self.v[vy],
@@ -77,8 +78,15 @@ impl System {
                 self.v[0xF] = msd;
                 self.v[vx] = x << 1;
             }
+            OpCode::SNE { vx, vy } => {
+                let x = self.v[vx];
+                let y = self.v[vy];
+
+                if x != y {
+                    self.pc += 2
+                }
+            }
             OpCode::ADDVx { vx, value } => self.v[vx] += value,
-            OpCode::LDI(value) => self.i = value,
             OpCode::DRW { vx, vy, n } => {
                 self.update_frame_buffer(vx, vy, n);
                 self.render();
@@ -395,6 +403,36 @@ mod tests {
             0x01, system.v[0x000F],
             "should set v[0xF] to 1 since its the MSD"
         );
+    }
+
+    #[test]
+    fn sne() {
+        // Skip next instruction if Vx != Vy.
+        // The values of Vx and Vy are compared, and if they are not equal, the program counter is increased by 2.
+        let mut system = System::new();
+        system.v[0x000A] = 0x05;
+        system.v[0x000B] = 0x01;
+
+        system.execute(&OpCode::SNE {
+            vx: 0x000A,
+            vy: 0x000B,
+        });
+
+        assert_eq!(
+            0x202, system.pc,
+            "should increment pc by 2 since VX != to VY"
+        );
+
+        let mut system = System::new(); //re-init pc
+        system.v[0x000A] = 0x90;
+        system.v[0x000B] = 0x90;
+
+        system.execute(&OpCode::SNE {
+            vx: 0x000A,
+            vy: 0x000B,
+        });
+
+        assert_eq!(0x200, system.pc, "should not increment PC since VX == VY");
     }
 
     #[test]
