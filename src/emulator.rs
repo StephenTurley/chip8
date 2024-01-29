@@ -49,11 +49,17 @@ impl System {
             OpCode::ANDVxVy { vx, vy } => self.v[vx] = self.v[vx] & self.v[vy],
             OpCode::XORVxVy { vx, vy } => self.v[vx] = self.v[vx] ^ self.v[vy],
             OpCode::ADDVxVy { vx, vy } => self.v[vx] = self.v[vx] + self.v[vy],
-            OpCode::SUBVxVy { vx, vy } => {
+            OpCode::SUB { vx, vy } => {
                 let x = self.v[vx];
                 let y = self.v[vy];
-                self.v[vx] = x - y;
+                self.v[vx] = x.wrapping_sub(y);
                 self.v[0x000F] = if x > y { 1 } else { 0 };
+            }
+            OpCode::SUBn { vx, vy } => {
+                let x = self.v[vx];
+                let y = self.v[vy];
+                self.v[vx] = y.wrapping_sub(x);
+                self.v[0x000F] = if y > x { 1 } else { 0 };
             }
             OpCode::SHR { vx, vy: _vy } => {
                 // this impl ignores the vy... TODO configure this for
@@ -257,7 +263,7 @@ mod tests {
     }
 
     #[test]
-    fn sub_vx_vy() {
+    fn sub() {
         // 8xy5 - SUB Vx, Vy
         // Set Vx = Vx - Vy, set VF = NOT borrow.
         // If Vx > Vy, then VF is set to 1, otherwise 0. Then Vy is subtracted from Vx, and the results stored in Vx.
@@ -265,7 +271,7 @@ mod tests {
         system.v[0x000D] = 0x05; //vx
         system.v[0x000A] = 0x01; //vy
 
-        system.execute(&OpCode::SUBVxVy {
+        system.execute(&OpCode::SUB {
             vx: 0x000D,
             vy: 0x000A,
         });
@@ -276,8 +282,43 @@ mod tests {
         let mut system = System::new();
         system.v[0x000D] = 0x01; //vx
         system.v[0x000A] = 0x05; //vy
+
+        system.execute(&OpCode::SUB {
+            vx: 0x000D,
+            vy: 0x000A,
+        });
+
+        assert_eq!(0xFC, system.v[0x000D]);
+        assert_eq!(0x0, system.v[0x000F], "do not set borrow bit if x > y");
+    }
+
+    #[test]
+    fn subn() {
+        // Set Vx = Vy - Vx, set VF = NOT borrow.
+        // If Vy > Vx, then VF is set to 1, otherwise 0. Then Vx is subtracted from Vy, and the results stored in Vx.
+        //
+        let mut system = System::new();
+        system.v[0x000D] = 0x01; //vx
+        system.v[0x000A] = 0x05; //vy
+
+        system.execute(&OpCode::SUBn {
+            vx: 0x000D,
+            vy: 0x000A,
+        });
+
+        assert_eq!(0x04, system.v[0x000D]);
+        assert_eq!(0x1, system.v[0x000F], "must set borrow bit");
+
+        let mut system = System::new();
+        system.v[0x000D] = 0x05; //vx
+        system.v[0x000A] = 0x01; //vy
                                  //
-        assert_eq!(0x01, system.v[0x000D]);
+        system.execute(&OpCode::SUBn {
+            vx: 0x000D,
+            vy: 0x000A,
+        });
+
+        assert_eq!(0xFC, system.v[0x000D]);
         assert_eq!(0x0, system.v[0x000F], "do not set borrow bit if x > y");
     }
 

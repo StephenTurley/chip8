@@ -10,7 +10,8 @@ pub enum OpCode {
     ANDVxVy { vx: usize, vy: usize },
     XORVxVy { vx: usize, vy: usize },
     ADDVxVy { vx: usize, vy: usize },
-    SUBVxVy { vx: usize, vy: usize },
+    SUB { vx: usize, vy: usize },
+    SUBn { vx: usize, vy: usize },
     SHR { vx: usize, vy: usize },
     ADDVx { vx: usize, value: u8 },
     LDI(u16),
@@ -29,7 +30,8 @@ impl Display for OpCode {
             OpCode::ANDVxVy { vx, vy } => write!(f, "AND VX:{:#06X} VY:{:#06X}", vx, vy),
             OpCode::XORVxVy { vx, vy } => write!(f, "XOR VX:{:#06X} VY:{:#06X}", vx, vy),
             OpCode::ADDVxVy { vx, vy } => write!(f, "ADD VX:{:#06X} VY:{:#06X}", vx, vy),
-            OpCode::SUBVxVy { vx, vy } => write!(f, "SUB VX:{:#06X} VY:{:#06X}", vx, vy),
+            OpCode::SUB { vx, vy } => write!(f, "SUB VX:{:#06X} VY:{:#06X}", vx, vy),
+            OpCode::SUBn { vx, vy } => write!(f, "SUBn VX:{:#06X} VY:{:#06X}", vx, vy),
             OpCode::SHR { vx, vy } => write!(f, "SHR VX:{:#06X} VY:{:#06X}", vx, vy),
             OpCode::ADDVx { vx, value } => write!(f, "ADD VX:{:#06X} value:{:#06X}", vx, value),
             OpCode::LDI(value) => write!(f, "LDI value:{:#06X}", value),
@@ -75,11 +77,15 @@ pub fn decode(op: u16) -> OpCode {
                     vx: ((op & 0x0F00) >> 8) as usize,
                     vy: ((op & 0x00F0) >> 4) as usize,
                 },
-                0x0005 => OpCode::SUBVxVy {
+                0x0005 => OpCode::SUB {
                     vx: ((op & 0x0F00) >> 8) as usize,
                     vy: ((op & 0x00F0) >> 4) as usize,
                 },
                 0x0006 => OpCode::SHR {
+                    vx: ((op & 0x0F00) >> 8) as usize,
+                    vy: ((op & 0x00F0) >> 4) as usize,
+                },
+                0x0007 => OpCode::SUBn {
                     vx: ((op & 0x0F00) >> 8) as usize,
                     vy: ((op & 0x00F0) >> 4) as usize,
                 },
@@ -209,10 +215,22 @@ mod tests {
     }
 
     #[test]
-    fn sub_vx_vy() {
+    fn sub() {
         let result = decode(0x8A15);
         assert_eq!(
-            OpCode::SUBVxVy {
+            OpCode::SUB {
+                vx: 0x000A,
+                vy: 0x0001,
+            },
+            result
+        );
+    }
+
+    #[test]
+    fn sub_n() {
+        let result = decode(0x8A17);
+        assert_eq!(
+            OpCode::SUBn {
                 vx: 0x000A,
                 vy: 0x0001,
             },
