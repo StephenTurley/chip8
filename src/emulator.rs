@@ -55,6 +55,15 @@ impl System {
                 self.v[vx] = x - y;
                 self.v[0x000F] = if x > y { 1 } else { 0 };
             }
+            OpCode::SHR { vx, vy: _vy } => {
+                // this impl ignores the vy... TODO configure this for
+                // some roms that use the older version that moved vy
+                // to vx then shifted
+                let x = self.v[vx];
+                let lsd = x & 0x01;
+                self.v[0xF] = lsd;
+                self.v[vx] = x >> 1;
+            }
             OpCode::ADDVx { vx, value } => self.v[vx] += value,
             OpCode::LDI(value) => self.i = value,
             OpCode::DRW { vx, vy, n } => {
@@ -270,6 +279,24 @@ mod tests {
                                  //
         assert_eq!(0x01, system.v[0x000D]);
         assert_eq!(0x0, system.v[0x000F], "do not set borrow bit if x > y");
+    }
+
+    #[test]
+    fn shr() {
+        let mut system = System::new();
+        system.v[0x000A] = 0x05; // vx 00000101
+        system.v[0x000B] = 0x01; // vy, ignored in this impl
+
+        system.execute(&OpCode::SHR {
+            vx: 0x000A,
+            vy: 0x000B,
+        });
+
+        assert_eq!(0x02, system.v[0x000A]);
+        assert_eq!(
+            0x01, system.v[0x000F],
+            "should set v[0xF] to 1 since its the LSD"
+        );
     }
 
     #[test]
