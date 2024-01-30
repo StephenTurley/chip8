@@ -64,6 +64,11 @@ impl System {
                     self.pc += 2;
                 }
             }
+            OpCode::SEVxVy { vx, vy } => {
+                if self.v[vx] == self.v[vy] {
+                    self.pc += 2;
+                }
+            }
             OpCode::LDVx { vx, value } => self.v[vx] = value,
             OpCode::LDVxVy { vx, vy } => self.v[vx] = self.v[vy],
             OpCode::ORVxVy { vx, vy } => self.v[vx] = self.v[vx] | self.v[vy],
@@ -285,6 +290,35 @@ mod tests {
         });
 
         assert_eq!(0x0202, system.pc, "should incrment pc when vx != value");
+    }
+
+    #[test]
+    fn se_vx_vy() {
+        // Skip next instruction if Vx = Vy.
+        // The interpreter compares register Vx to register Vy,
+        // and if they are equal, increments the program counter by 2.
+
+        let mut system = System::new();
+        system.v[0x000A] = 0x00AB; //vx
+        system.v[0x000B] = 0x00AB; //vy
+
+        system.execute(&OpCode::SEVxVy {
+            vx: 0x000A,
+            vy: 0x000B,
+        });
+
+        assert_eq!(0x0202, system.pc, "should incrment pc when vx == vy");
+
+        let mut system = System::new();
+        system.v[0x000A] = 0x00AB; //vx
+        system.v[0x000B] = 0x00AC; //vy
+
+        system.execute(&OpCode::SEVxVy {
+            vx: 0x000A,
+            vy: 0x000B,
+        });
+
+        assert_eq!(0x0200, system.pc, "should not incrment pc when vx != vy");
     }
 
     #[test]
