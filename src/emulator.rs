@@ -54,12 +54,17 @@ impl System {
                 self.stack[self.sp] = self.pc;
                 self.pc = addr
             }
+            OpCode::SE { vx, value } => {
+                if self.v[vx] == value {
+                    self.pc = self.pc.wrapping_add(2);
+                }
+            }
             OpCode::LDVx { vx, value } => self.v[vx] = value,
             OpCode::LDVxVy { vx, vy } => self.v[vx] = self.v[vy],
             OpCode::ORVxVy { vx, vy } => self.v[vx] = self.v[vx] | self.v[vy],
             OpCode::ANDVxVy { vx, vy } => self.v[vx] = self.v[vx] & self.v[vy],
             OpCode::XORVxVy { vx, vy } => self.v[vx] = self.v[vx] ^ self.v[vy],
-            OpCode::ADDVxVy { vx, vy } => self.v[vx] = self.v[vx] + self.v[vy],
+            OpCode::ADDVxVy { vx, vy } => self.v[vx] = self.v[vx].wrapping_add(self.v[vy]),
             OpCode::SUB { vx, vy } => {
                 let x = self.v[vx];
                 let y = self.v[vy];
@@ -97,7 +102,7 @@ impl System {
                 }
             }
             OpCode::LDI(value) => self.i = value,
-            OpCode::ADDVx { vx, value } => self.v[vx] += value,
+            OpCode::ADDVx { vx, value } => self.v[vx] = self.v[vx].wrapping_add(value),
             OpCode::DRW { vx, vy, n } => {
                 self.update_frame_buffer(vx, vy, n);
                 self.render();
@@ -224,6 +229,23 @@ mod tests {
         assert_eq!(1, system.sp, "should increment sp");
         assert_eq!(0x0200, system.stack[1], "should put pc on top of stack");
         assert_eq!(0x0555, system.pc);
+    }
+
+    #[test]
+    fn se() {
+        // Skip next instruction if Vx = kk.
+        // The interpreter compares register Vx to kk,
+        // and if they are equal, increments the program counter by 2.
+
+        let mut system = System::new();
+        system.v[0x000A] = 0x00AB; //vx
+
+        system.execute(&OpCode::SE {
+            vx: 0x000A,
+            value: 0x00AB,
+        });
+
+        assert_eq!(0x0202, system.pc, "should incrment pc when vx == value");
     }
 
     #[test]

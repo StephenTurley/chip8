@@ -6,6 +6,7 @@ pub enum OpCode {
     RET,
     JMP(u16),
     CALL(u16),
+    SE { vx: usize, value: u8 },
     LDVx { vx: usize, value: u8 },
     LDVxVy { vx: usize, vy: usize },
     ORVxVy { vx: usize, vy: usize },
@@ -30,6 +31,7 @@ impl Display for OpCode {
             OpCode::RET => write!(f, "RET"),
             OpCode::JMP(addr) => write!(f, "JMP address:{:#06X}", addr),
             OpCode::CALL(addr) => write!(f, "CALL address:{:#06X}", addr),
+            OpCode::SE { vx, value } => write!(f, "SE VX:{:#06X} value:{:#06X}", vx, value),
             OpCode::LDVx { vx, value } => write!(f, "LD VX:{:#06X} value:{:#06X}", vx, value),
             OpCode::LDVxVy { vx, vy } => write!(f, "LD VX:{:#06X} VY:{:#06X}", vx, vy),
             OpCode::ORVxVy { vx, vy } => write!(f, "OR VX:{:#06X} VY:{:#06X}", vx, vy),
@@ -58,6 +60,10 @@ pub fn decode(op: u16) -> OpCode {
         _ => match op & 0xF000 {
             0x1000 => OpCode::JMP(op & 0x0FFF),
             0x2000 => OpCode::CALL(op & 0x0FFF),
+            0x3000 => OpCode::SE {
+                vx: ((op & 0x0F00) >> 8) as usize,
+                value: (op & 0x00FF) as u8,
+            },
             0x6000 => OpCode::LDVx {
                 vx: ((op & 0x0F00) >> 8) as usize,
                 value: (op & 0x00FF) as u8,
@@ -155,6 +161,18 @@ mod tests {
     fn call() {
         let result = decode(0x2ABC);
         assert_eq!(OpCode::CALL(0x0ABC), result);
+    }
+
+    #[test]
+    fn se() {
+        let result = decode(0x31AB);
+        assert_eq!(
+            OpCode::SE {
+                vx: 0x0001,
+                value: 0x00AB
+            },
+            result
+        );
     }
 
     #[test]
