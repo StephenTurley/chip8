@@ -3,7 +3,9 @@ use std::fmt::Display;
 #[derive(Debug, PartialEq)]
 pub enum OpCode {
     CLS,
+    RET,
     JMP(u16),
+    CALL(u16),
     LDVx { vx: usize, value: u8 },
     LDVxVy { vx: usize, vy: usize },
     ORVxVy { vx: usize, vy: usize },
@@ -25,7 +27,9 @@ impl Display for OpCode {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match *self {
             OpCode::CLS => write!(f, "CLS"),
+            OpCode::RET => write!(f, "RET"),
             OpCode::JMP(addr) => write!(f, "JMP address:{:#06X}", addr),
+            OpCode::CALL(addr) => write!(f, "CALL address:{:#06X}", addr),
             OpCode::LDVx { vx, value } => write!(f, "LD VX:{:#06X} value:{:#06X}", vx, value),
             OpCode::LDVxVy { vx, vy } => write!(f, "LD VX:{:#06X} VY:{:#06X}", vx, vy),
             OpCode::ORVxVy { vx, vy } => write!(f, "OR VX:{:#06X} VY:{:#06X}", vx, vy),
@@ -50,8 +54,10 @@ impl Display for OpCode {
 pub fn decode(op: u16) -> OpCode {
     match op {
         0x00E0 => OpCode::CLS,
+        0x00EE => OpCode::RET,
         _ => match op & 0xF000 {
             0x1000 => OpCode::JMP(op & 0x0FFF),
+            0x2000 => OpCode::CALL(op & 0x0FFF),
             0x6000 => OpCode::LDVx {
                 vx: ((op & 0x0F00) >> 8) as usize,
                 value: (op & 0x00FF) as u8,
@@ -134,9 +140,21 @@ mod tests {
     }
 
     #[test]
+    fn ret() {
+        let result = decode(0x00EE);
+        assert_eq!(OpCode::RET, result);
+    }
+
+    #[test]
     fn jmp() {
         let result = decode(0x1ABC);
         assert_eq!(OpCode::JMP(0x0ABC), result);
+    }
+
+    #[test]
+    fn call() {
+        let result = decode(0x2ABC);
+        assert_eq!(OpCode::CALL(0x0ABC), result);
     }
 
     #[test]

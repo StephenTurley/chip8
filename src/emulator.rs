@@ -6,7 +6,8 @@ pub struct System {
     heap: Heap,
     pc: u16,
     i: u16,
-    // stack: [u16; 64],
+    stack: [u16; 64],
+    sp: usize,
     frame_buffer: [[bool; 64]; 32], //indexed [y][x]; top left [0][0]; bottom right [31, 63]
     // delay: u8,
     // sound: u8,
@@ -18,7 +19,8 @@ impl System {
             heap: Heap::new(),
             pc: heap::ROM_START,
             i: 0,
-            // stack: [0; 64],
+            stack: [0; 64],
+            sp: 0,
             frame_buffer: [[false; 64]; 32],
             // delay: 0,
             // sound: 0,
@@ -42,10 +44,18 @@ impl System {
     pub fn execute(&mut self, op: &OpCode) {
         match *op {
             OpCode::CLS => self.frame_buffer = [[false; 64]; 32],
+            OpCode::RET => {
+                self.pc = self.stack[self.sp];
+                self.sp -= 1;
+            }
             OpCode::JMP(addr) => self.pc = addr,
+            OpCode::CALL(addr) => {
+                self.sp += 1;
+                self.stack[self.sp] = self.pc;
+                self.pc = addr
+            }
             OpCode::LDVx { vx, value } => self.v[vx] = value,
             OpCode::LDVxVy { vx, vy } => self.v[vx] = self.v[vy],
-            OpCode::LDI(value) => self.i = value,
             OpCode::ORVxVy { vx, vy } => self.v[vx] = self.v[vx] | self.v[vy],
             OpCode::ANDVxVy { vx, vy } => self.v[vx] = self.v[vx] & self.v[vy],
             OpCode::XORVxVy { vx, vy } => self.v[vx] = self.v[vx] ^ self.v[vy],
@@ -86,6 +96,7 @@ impl System {
                     self.pc += 2
                 }
             }
+            OpCode::LDI(value) => self.i = value,
             OpCode::ADDVx { vx, value } => self.v[vx] += value,
             OpCode::DRW { vx, vy, n } => {
                 self.update_frame_buffer(vx, vy, n);
@@ -146,6 +157,7 @@ impl System {
 #[cfg(test)]
 mod tests {
     use super::*;
+
     #[test]
     fn fetch() {
         let mut system = System::new();
@@ -172,11 +184,45 @@ mod tests {
     }
 
     #[test]
+    fn ret() {
+        // Return from a subroutine.
+        // The interpreter sets the program counter to the address at the top of the stack,
+        // then subtracts 1 from the stack pointer.
+        let mut system = System::new();
+
+        system.stack[1] = 0x0202;
+        system.sp = 1;
+
+        system.execute(&OpCode::RET);
+
+        assert_eq!(
+            0x0202, system.pc,
+            "should set the pc to the value at the top of the stack"
+        );
+        assert_eq!(0, system.sp, "should decrement the sp by 1");
+    }
+
+    #[test]
     fn jmp() {
         let mut system = System::new();
 
         system.execute(&OpCode::JMP(0x0555));
 
+        assert_eq!(0x0555, system.pc);
+    }
+
+    #[test]
+    fn call() {
+        // Call subroutine at nnn.
+        // The interpreter increments the stack pointer,
+        // then puts the current PC on the top of the stack.
+        // The PC is then set to nnn.
+        let mut system = System::new();
+
+        system.execute(&OpCode::CALL(0x0555));
+
+        assert_eq!(1, system.sp, "should increment sp");
+        assert_eq!(0x0200, system.stack[1], "should put pc on top of stack");
         assert_eq!(0x0555, system.pc);
     }
 
