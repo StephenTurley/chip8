@@ -22,6 +22,7 @@ pub enum OpCode {
     ADDVx { vx: usize, value: u8 },
     SNEVxVy { vx: usize, vy: usize },
     LDI(u16),
+    JMPV0(u16),
     DRW { vx: usize, vy: usize, n: usize },
     Unknown,
 }
@@ -49,6 +50,7 @@ impl Display for OpCode {
             OpCode::ADDVx { vx, value } => write!(f, "ADD VX:{:#06X} value:{:#06X}", vx, value),
             OpCode::SNEVxVy { vx, vy } => write!(f, "SNE VX:{:#06X} VY:{:#06X}", vx, vy),
             OpCode::LDI(value) => write!(f, "LDI value:{:#06X}", value),
+            OpCode::JMPV0(value) => write!(f, "JMPV0 value:{:#06X}", value),
             OpCode::DRW { vx, vy, n } => {
                 write!(f, "DRW VX:{:#06X} VX:{:#06X} n:{:#06X}", vx, vy, n)
             }
@@ -131,6 +133,7 @@ pub fn decode(op: u16) -> OpCode {
                 vy: ((op & 0x00F0) >> 4) as usize,
             },
             0xA000 => OpCode::LDI(op & 0x0FFF),
+            0xB000 => OpCode::JMPV0(op & 0x0FFF),
             0xD000 => OpCode::DRW {
                 vx: ((op & 0x0F00) >> 8) as usize,
                 vy: ((op & 0x00F0) >> 4) as usize,
@@ -227,6 +230,12 @@ mod tests {
     fn ldi() {
         let result = decode(0xA123);
         assert_eq!(OpCode::LDI(0x0123), result);
+    }
+
+    #[test]
+    fn jmp_v0() {
+        let result = decode(0xB123);
+        assert_eq!(OpCode::JMPV0(0x0123), result);
     }
 
     #[test]

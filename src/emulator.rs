@@ -111,8 +111,9 @@ impl System {
                     self.pc += 2
                 }
             }
-            OpCode::LDI(value) => self.i = value,
             OpCode::ADDVx { vx, value } => self.v[vx] = self.v[vx].wrapping_add(value),
+            OpCode::LDI(value) => self.i = value,
+            OpCode::JMPV0(value) => self.pc = self.v[0] as u16 + value,
             OpCode::DRW { vx, vy, n } => {
                 self.update_frame_buffer(vx, vy, n);
                 self.render();
@@ -583,5 +584,18 @@ mod tests {
         system.execute(&OpCode::LDI(0x0123));
 
         assert_eq!(0x0123, system.i);
+    }
+
+    #[test]
+    fn jmp_v0() {
+        // Jump to location nnn + V0.
+        // The program counter is set to nnn plus the value of V0.
+
+        let mut system = System::new();
+        system.v[0] = 0x0002;
+
+        system.execute(&OpCode::JMPV0(0x0202));
+
+        assert_eq!(0x0204, system.pc);
     }
 }
