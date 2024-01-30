@@ -56,7 +56,12 @@ impl System {
             }
             OpCode::SE { vx, value } => {
                 if self.v[vx] == value {
-                    self.pc = self.pc.wrapping_add(2);
+                    self.pc += 2;
+                }
+            }
+            OpCode::SNE { vx, value } => {
+                if self.v[vx] != value {
+                    self.pc += 2;
                 }
             }
             OpCode::LDVx { vx, value } => self.v[vx] = value,
@@ -93,7 +98,7 @@ impl System {
                 self.v[0xF] = msd;
                 self.v[vx] = x << 1;
             }
-            OpCode::SNE { vx, vy } => {
+            OpCode::SNEVxVy { vx, vy } => {
                 let x = self.v[vx];
                 let y = self.v[vy];
 
@@ -246,6 +251,40 @@ mod tests {
         });
 
         assert_eq!(0x0202, system.pc, "should incrment pc when vx == value");
+
+        let mut system = System::new();
+        system.v[0x000A] = 0x00AB; //vx
+
+        system.execute(&OpCode::SE {
+            vx: 0x000A,
+            value: 0x00AC,
+        });
+
+        assert_eq!(0x0200, system.pc, "should not incrment pc when vx != value");
+    }
+
+    #[test]
+    fn sne() {
+        // Skip next instruction if Vx != kk.
+        // The interpreter compares register Vx to kk,
+        // and if they are not equal, increments the program counter by 2.
+
+        let mut system = System::new();
+        system.v[0x000A] = 0x00AB; //vx
+
+        system.execute(&OpCode::SNE {
+            vx: 0x000A,
+            value: 0x00AB,
+        });
+
+        assert_eq!(0x0200, system.pc, "should not incrment pc when vx == value");
+
+        system.execute(&OpCode::SNE {
+            vx: 0x000A,
+            value: 0x00AD,
+        });
+
+        assert_eq!(0x0202, system.pc, "should incrment pc when vx != value");
     }
 
     #[test]
@@ -474,14 +513,14 @@ mod tests {
     }
 
     #[test]
-    fn sne() {
+    fn sne_vx_vy() {
         // Skip next instruction if Vx != Vy.
         // The values of Vx and Vy are compared, and if they are not equal, the program counter is increased by 2.
         let mut system = System::new();
         system.v[0x000A] = 0x05;
         system.v[0x000B] = 0x01;
 
-        system.execute(&OpCode::SNE {
+        system.execute(&OpCode::SNEVxVy {
             vx: 0x000A,
             vy: 0x000B,
         });
@@ -495,7 +534,7 @@ mod tests {
         system.v[0x000A] = 0x90;
         system.v[0x000B] = 0x90;
 
-        system.execute(&OpCode::SNE {
+        system.execute(&OpCode::SNEVxVy {
             vx: 0x000A,
             vy: 0x000B,
         });

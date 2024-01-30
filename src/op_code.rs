@@ -7,6 +7,7 @@ pub enum OpCode {
     JMP(u16),
     CALL(u16),
     SE { vx: usize, value: u8 },
+    SNE { vx: usize, value: u8 },
     LDVx { vx: usize, value: u8 },
     LDVxVy { vx: usize, vy: usize },
     ORVxVy { vx: usize, vy: usize },
@@ -18,7 +19,7 @@ pub enum OpCode {
     SHR { vx: usize, vy: usize },
     SHL { vx: usize, vy: usize },
     ADDVx { vx: usize, value: u8 },
-    SNE { vx: usize, vy: usize },
+    SNEVxVy { vx: usize, vy: usize },
     LDI(u16),
     DRW { vx: usize, vy: usize, n: usize },
     Unknown,
@@ -32,6 +33,7 @@ impl Display for OpCode {
             OpCode::JMP(addr) => write!(f, "JMP address:{:#06X}", addr),
             OpCode::CALL(addr) => write!(f, "CALL address:{:#06X}", addr),
             OpCode::SE { vx, value } => write!(f, "SE VX:{:#06X} value:{:#06X}", vx, value),
+            OpCode::SNE { vx, value } => write!(f, "SNE VX:{:#06X} value:{:#06X}", vx, value),
             OpCode::LDVx { vx, value } => write!(f, "LD VX:{:#06X} value:{:#06X}", vx, value),
             OpCode::LDVxVy { vx, vy } => write!(f, "LD VX:{:#06X} VY:{:#06X}", vx, vy),
             OpCode::ORVxVy { vx, vy } => write!(f, "OR VX:{:#06X} VY:{:#06X}", vx, vy),
@@ -43,7 +45,7 @@ impl Display for OpCode {
             OpCode::SHR { vx, vy } => write!(f, "SHR VX:{:#06X} VY:{:#06X}", vx, vy),
             OpCode::SHL { vx, vy } => write!(f, "SHL VX:{:#06X} VY:{:#06X}", vx, vy),
             OpCode::ADDVx { vx, value } => write!(f, "ADD VX:{:#06X} value:{:#06X}", vx, value),
-            OpCode::SNE { vx, vy } => write!(f, "SNE VX:{:#06X} VY:{:#06X}", vx, vy),
+            OpCode::SNEVxVy { vx, vy } => write!(f, "SNE VX:{:#06X} VY:{:#06X}", vx, vy),
             OpCode::LDI(value) => write!(f, "LDI value:{:#06X}", value),
             OpCode::DRW { vx, vy, n } => {
                 write!(f, "DRW VX:{:#06X} VX:{:#06X} n:{:#06X}", vx, vy, n)
@@ -61,6 +63,10 @@ pub fn decode(op: u16) -> OpCode {
             0x1000 => OpCode::JMP(op & 0x0FFF),
             0x2000 => OpCode::CALL(op & 0x0FFF),
             0x3000 => OpCode::SE {
+                vx: ((op & 0x0F00) >> 8) as usize,
+                value: (op & 0x00FF) as u8,
+            },
+            0x4000 => OpCode::SNE {
                 vx: ((op & 0x0F00) >> 8) as usize,
                 value: (op & 0x00FF) as u8,
             },
@@ -111,7 +117,7 @@ pub fn decode(op: u16) -> OpCode {
                 },
                 _ => OpCode::Unknown,
             },
-            0x9000 => OpCode::SNE {
+            0x9000 => OpCode::SNEVxVy {
                 // may need to check that the last byte is also zero... here
                 // its masked out, but its the only op withe a MSD of 9 in the
                 // spec so I didn't check it.
@@ -168,6 +174,18 @@ mod tests {
         let result = decode(0x31AB);
         assert_eq!(
             OpCode::SE {
+                vx: 0x0001,
+                value: 0x00AB
+            },
+            result
+        );
+    }
+
+    #[test]
+    fn sne() {
+        let result = decode(0x41AB);
+        assert_eq!(
+            OpCode::SNE {
                 vx: 0x0001,
                 value: 0x00AB
             },
@@ -314,10 +332,10 @@ mod tests {
     }
 
     #[test]
-    fn sne() {
+    fn sne_vx_vy() {
         let result = decode(0x9A10);
         assert_eq!(
-            OpCode::SNE {
+            OpCode::SNEVxVy {
                 vx: 0x000A,
                 vy: 0x0001,
             },
