@@ -23,6 +23,7 @@ pub enum OpCode {
     SNEVxVy { vx: usize, vy: usize },
     LDI(u16),
     JMPV0(u16),
+    RND { vx: usize, value: u8 },
     DRW { vx: usize, vy: usize, n: usize },
     Unknown,
 }
@@ -51,6 +52,7 @@ impl Display for OpCode {
             OpCode::SNEVxVy { vx, vy } => write!(f, "SNE VX:{:#06X} VY:{:#06X}", vx, vy),
             OpCode::LDI(value) => write!(f, "LDI value:{:#06X}", value),
             OpCode::JMPV0(value) => write!(f, "JMPV0 value:{:#06X}", value),
+            OpCode::RND { vx, value } => write!(f, "RND VX:{:#06X} value:{:#06X}", vx, value),
             OpCode::DRW { vx, vy, n } => {
                 write!(f, "DRW VX:{:#06X} VX:{:#06X} n:{:#06X}", vx, vy, n)
             }
@@ -134,6 +136,10 @@ pub fn decode(op: u16) -> OpCode {
             },
             0xA000 => OpCode::LDI(op & 0x0FFF),
             0xB000 => OpCode::JMPV0(op & 0x0FFF),
+            0xC000 => OpCode::RND {
+                vx: ((op & 0x0F00) >> 8) as usize,
+                value: (op & 0x00FF) as u8,
+            },
             0xD000 => OpCode::DRW {
                 vx: ((op & 0x0F00) >> 8) as usize,
                 vy: ((op & 0x00F0) >> 4) as usize,

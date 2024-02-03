@@ -114,6 +114,10 @@ impl System {
             OpCode::ADDVx { vx, value } => self.v[vx] = self.v[vx].wrapping_add(value),
             OpCode::LDI(value) => self.i = value,
             OpCode::JMPV0(value) => self.pc = self.v[0] as u16 + value,
+            OpCode::RND { vx, value } => {
+                let rnd: u8 = rand::random();
+                self.v[vx] = rnd & value;
+            }
             OpCode::DRW { vx, vy, n } => {
                 self.update_frame_buffer(vx, vy, n);
                 self.render();
