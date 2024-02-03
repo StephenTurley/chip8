@@ -123,6 +123,11 @@ impl System {
                 self.render();
             }
             OpCode::ADDIVx(vx) => self.i = self.i.wrapping_add(self.v[vx] as u16),
+            OpCode::LDIVx(vx) => {
+                for v in 0..vx {
+                    self.heap.set_byte(self.i.into(), self.v[v]);
+                }
+            }
             OpCode::Unknown => {}
         };
     }

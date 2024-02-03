@@ -26,6 +26,7 @@ pub enum OpCode {
     RND { vx: usize, value: u8 },
     DRW { vx: usize, vy: usize, n: usize },
     ADDIVx(usize),
+    LDIVx(usize),
     Unknown,
 }
 
@@ -55,6 +56,7 @@ impl Display for OpCode {
             OpCode::JMPV0(value) => write!(f, "JMPV0 value:{:#06X}", value),
             OpCode::RND { vx, value } => write!(f, "RND VX:{:#06X} value:{:#06X}", vx, value),
             OpCode::ADDIVx(vx) => write!(f, "ADD I VX:{:#06X}", vx),
+            OpCode::LDIVx(vx) => write!(f, "LD I VX:{:#06X}", vx),
             OpCode::DRW { vx, vy, n } => {
                 write!(f, "DRW VX:{:#06X} VX:{:#06X} n:{:#06X}", vx, vy, n)
             }
@@ -149,6 +151,7 @@ pub fn decode(op: u16) -> OpCode {
             },
             0xF000 => match op & 0x00FF {
                 0x001E => OpCode::ADDIVx(((op & 0x0F00) >> 8) as usize),
+                0x0055 => OpCode::LDIVx(((op & 0x0F00) >> 8) as usize),
                 _ => OpCode::Unknown,
             },
             _ => OpCode::Unknown,
