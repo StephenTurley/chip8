@@ -124,8 +124,14 @@ impl System {
             }
             OpCode::ADDIVx(vx) => self.i = self.i.wrapping_add(self.v[vx] as u16),
             OpCode::LDIVx(vx) => {
-                for v in 0..vx {
-                    self.heap.set_byte(self.i.into(), self.v[v]);
+                for v in 0..=vx {
+                    self.heap
+                        .set_byte(self.i.wrapping_add(v as u16).into(), self.v[v]);
+                }
+            }
+            OpCode::LDVxI(vx) => {
+                for v in 0..=vx {
+                    self.v[v] = self.heap.fetch_byte(self.i.wrapping_add(v as u16).into());
                 }
             }
             OpCode::Unknown => {}
