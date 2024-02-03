@@ -122,6 +122,7 @@ impl System {
                 self.update_frame_buffer(vx, vy, n);
                 self.render();
             }
+            OpCode::ADDIVx(vx) => self.i = self.i.wrapping_add(self.v[vx] as u16),
             OpCode::Unknown => {}
         };
     }
