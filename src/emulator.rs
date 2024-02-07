@@ -43,51 +43,51 @@ impl System {
 
     pub fn execute(&mut self, op: &OpCode) {
         match *op {
-            OpCode::CLS => self.frame_buffer = [[false; 64]; 32],
-            OpCode::RET => {
+            OpCode::Cls => self.frame_buffer = [[false; 64]; 32],
+            OpCode::Ret => {
                 self.pc = self.stack[self.sp];
                 self.sp -= 1;
             }
-            OpCode::JMP(addr) => self.pc = addr,
-            OpCode::CALL(addr) => {
+            OpCode::Jmp(addr) => self.pc = addr,
+            OpCode::Call(addr) => {
                 self.sp += 1;
                 self.stack[self.sp] = self.pc;
                 self.pc = addr
             }
-            OpCode::SE { vx, value } => {
+            OpCode::Se { vx, value } => {
                 if self.v[vx] == value {
                     self.pc += 2;
                 }
             }
-            OpCode::SNE { vx, value } => {
+            OpCode::Sne { vx, value } => {
                 if self.v[vx] != value {
                     self.pc += 2;
                 }
             }
-            OpCode::SEVxVy { vx, vy } => {
+            OpCode::SeVxVy { vx, vy } => {
                 if self.v[vx] == self.v[vy] {
                     self.pc += 2;
                 }
             }
-            OpCode::LDVx { vx, value } => self.v[vx] = value,
-            OpCode::LDVxVy { vx, vy } => self.v[vx] = self.v[vy],
-            OpCode::ORVxVy { vx, vy } => self.v[vx] = self.v[vx] | self.v[vy],
-            OpCode::ANDVxVy { vx, vy } => self.v[vx] = self.v[vx] & self.v[vy],
-            OpCode::XORVxVy { vx, vy } => self.v[vx] = self.v[vx] ^ self.v[vy],
-            OpCode::ADDVxVy { vx, vy } => self.v[vx] = self.v[vx].wrapping_add(self.v[vy]),
-            OpCode::SUB { vx, vy } => {
+            OpCode::LdVx { vx, value } => self.v[vx] = value,
+            OpCode::LdVxVy { vx, vy } => self.v[vx] = self.v[vy],
+            OpCode::OrVxVy { vx, vy } => self.v[vx] |= self.v[vy],
+            OpCode::AndVxVy { vx, vy } => self.v[vx] &= self.v[vy],
+            OpCode::XorVxVy { vx, vy } => self.v[vx] ^= self.v[vy],
+            OpCode::AddVxVy { vx, vy } => self.v[vx] = self.v[vx].wrapping_add(self.v[vy]),
+            OpCode::Sub { vx, vy } => {
                 let x = self.v[vx];
                 let y = self.v[vy];
                 self.v[vx] = x.wrapping_sub(y);
                 self.v[0x000F] = if x > y { 1 } else { 0 };
             }
-            OpCode::SUBn { vx, vy } => {
+            OpCode::SubN { vx, vy } => {
                 let x = self.v[vx];
                 let y = self.v[vy];
                 self.v[vx] = y.wrapping_sub(x);
                 self.v[0x000F] = if y > x { 1 } else { 0 };
             }
-            OpCode::SHR { vx, vy: _vy } => {
+            OpCode::Shr { vx, vy: _vy } => {
                 // this impl ignores the vy... TODO configure this for
                 // some roms that use the older version that moved vy
                 // to vx then shifted
@@ -96,14 +96,14 @@ impl System {
                 self.v[0xF] = lsd;
                 self.v[vx] = x >> 1;
             }
-            OpCode::SHL { vx, vy: _vy } => {
+            OpCode::Shl { vx, vy: _vy } => {
                 // same as SHR wrt impl
                 let x = self.v[vx];
                 let msd = (x & 0x8F) >> 7;
                 self.v[0xF] = msd;
                 self.v[vx] = x << 1;
             }
-            OpCode::SNEVxVy { vx, vy } => {
+            OpCode::SneVxVy { vx, vy } => {
                 let x = self.v[vx];
                 let y = self.v[vy];
 
@@ -111,30 +111,30 @@ impl System {
                     self.pc += 2
                 }
             }
-            OpCode::ADDVx { vx, value } => self.v[vx] = self.v[vx].wrapping_add(value),
-            OpCode::LDI(value) => self.i = value,
-            OpCode::JMPV0(value) => self.pc = self.v[0] as u16 + value,
-            OpCode::RND { vx, value } => {
+            OpCode::AddVx { vx, value } => self.v[vx] = self.v[vx].wrapping_add(value),
+            OpCode::LdI(value) => self.i = value,
+            OpCode::JmpV0(value) => self.pc = self.v[0] as u16 + value,
+            OpCode::Rnd { vx, value } => {
                 let rnd: u8 = rand::random();
                 self.v[vx] = rnd & value;
             }
-            OpCode::DRW { vx, vy, n } => {
+            OpCode::Drw { vx, vy, n } => {
                 self.update_frame_buffer(vx, vy, n);
                 self.render();
             }
-            OpCode::ADDIVx(vx) => self.i = self.i.wrapping_add(self.v[vx] as u16),
-            OpCode::LDIVx(vx) => {
+            OpCode::AddIVx(vx) => self.i = self.i.wrapping_add(self.v[vx] as u16),
+            OpCode::LdIVx(vx) => {
                 for v in 0..=vx {
                     self.heap
                         .set_byte(self.i.wrapping_add(v as u16).into(), self.v[v]);
                 }
             }
-            OpCode::LDVxI(vx) => {
+            OpCode::LdVxI(vx) => {
                 for v in 0..=vx {
                     self.v[v] = self.heap.fetch_byte(self.i.wrapping_add(v as u16).into());
                 }
             }
-            OpCode::LDVxK(_vx) => {
+            OpCode::LdVxK(_vx) => {
                 loop {
                     todo!("figure out input");
                     //wait for input
@@ -147,14 +147,14 @@ impl System {
 
     fn render(&self) {
         for row in self.frame_buffer {
-            print!("\n");
+            println!();
             for px in row {
                 let symbol = if px { "⚫" } else { "⚪" };
 
                 print!("{}", symbol);
             }
         }
-        print!("\n");
+        println!();
     }
 
     fn update_frame_buffer(&mut self, vx: usize, vy: usize, sprite_rows: usize) {
@@ -165,7 +165,7 @@ impl System {
         let sprite_ref: usize = self.i.into();
 
         //set collision to 0
-        self.v[0x000F as usize] = 0;
+        self.v[0x000F] = 0;
 
         for row in 0..sprite_rows {
             let y = start_y + row as u8;
@@ -177,7 +177,7 @@ impl System {
                 // mask all other bits out
                 // convert to bool by != 0
                 if x < 64 && y < 32 {
-                    let pixel = ((sprite_row >> 7 - bit_index) & 0x01) != 0;
+                    let pixel = (((sprite_row >> 7) - bit_index) & 0x01) != 0;
                     let old_pixel = self.frame_buffer[y as usize][x as usize];
                     let new_pixel = old_pixel ^ pixel;
 
@@ -217,7 +217,7 @@ mod tests {
             ..System::new()
         };
 
-        system.execute(&OpCode::CLS);
+        system.execute(&OpCode::Cls);
 
         assert_eq!([[false; 64]; 32], system.frame_buffer);
     }
@@ -232,7 +232,7 @@ mod tests {
         system.stack[1] = 0x0202;
         system.sp = 1;
 
-        system.execute(&OpCode::RET);
+        system.execute(&OpCode::Ret);
 
         assert_eq!(
             0x0202, system.pc,
@@ -245,7 +245,7 @@ mod tests {
     fn jmp() {
         let mut system = System::new();
 
-        system.execute(&OpCode::JMP(0x0555));
+        system.execute(&OpCode::Jmp(0x0555));
 
         assert_eq!(0x0555, system.pc);
     }
@@ -258,7 +258,7 @@ mod tests {
         // The PC is then set to nnn.
         let mut system = System::new();
 
-        system.execute(&OpCode::CALL(0x0555));
+        system.execute(&OpCode::Call(0x0555));
 
         assert_eq!(1, system.sp, "should increment sp");
         assert_eq!(0x0200, system.stack[1], "should put pc on top of stack");
@@ -274,7 +274,7 @@ mod tests {
         let mut system = System::new();
         system.v[0x000A] = 0x00AB; //vx
 
-        system.execute(&OpCode::SE {
+        system.execute(&OpCode::Se {
             vx: 0x000A,
             value: 0x00AB,
         });
@@ -284,7 +284,7 @@ mod tests {
         let mut system = System::new();
         system.v[0x000A] = 0x00AB; //vx
 
-        system.execute(&OpCode::SE {
+        system.execute(&OpCode::Se {
             vx: 0x000A,
             value: 0x00AC,
         });
@@ -301,14 +301,14 @@ mod tests {
         let mut system = System::new();
         system.v[0x000A] = 0x00AB; //vx
 
-        system.execute(&OpCode::SNE {
+        system.execute(&OpCode::Sne {
             vx: 0x000A,
             value: 0x00AB,
         });
 
         assert_eq!(0x0200, system.pc, "should not incrment pc when vx == value");
 
-        system.execute(&OpCode::SNE {
+        system.execute(&OpCode::Sne {
             vx: 0x000A,
             value: 0x00AD,
         });
@@ -326,7 +326,7 @@ mod tests {
         system.v[0x000A] = 0x00AB; //vx
         system.v[0x000B] = 0x00AB; //vy
 
-        system.execute(&OpCode::SEVxVy {
+        system.execute(&OpCode::SeVxVy {
             vx: 0x000A,
             vy: 0x000B,
         });
@@ -337,7 +337,7 @@ mod tests {
         system.v[0x000A] = 0x00AB; //vx
         system.v[0x000B] = 0x00AC; //vy
 
-        system.execute(&OpCode::SEVxVy {
+        system.execute(&OpCode::SeVxVy {
             vx: 0x000A,
             vy: 0x000B,
         });
@@ -350,7 +350,7 @@ mod tests {
         let mut system = System::new();
         system.v[0x000A] = 0x00AB;
 
-        system.execute(&OpCode::ADDVx {
+        system.execute(&OpCode::AddVx {
             vx: 0x000A,
             value: 0x0001,
         });
@@ -362,7 +362,7 @@ mod tests {
     fn ld_vx() {
         let mut system = System::new();
 
-        system.execute(&OpCode::LDVx {
+        system.execute(&OpCode::LdVx {
             vx: 0x000F,
             value: 0x0012,
         });
@@ -375,7 +375,7 @@ mod tests {
         let mut system = System::new();
         system.v[0x000A] = 0xBE;
 
-        system.execute(&OpCode::LDVxVy {
+        system.execute(&OpCode::LdVxVy {
             vx: 0x000F,
             vy: 0x000A,
         });
@@ -389,7 +389,7 @@ mod tests {
         system.v[0x000F] = 0xF0;
         system.v[0x000A] = 0x0F;
 
-        system.execute(&OpCode::ORVxVy {
+        system.execute(&OpCode::OrVxVy {
             vx: 0x000F,
             vy: 0x000A,
         });
@@ -403,7 +403,7 @@ mod tests {
         system.v[0x000F] = 0xFF;
         system.v[0x000A] = 0x1F;
 
-        system.execute(&OpCode::ANDVxVy {
+        system.execute(&OpCode::AndVxVy {
             vx: 0x000F,
             vy: 0x000A,
         });
@@ -420,7 +420,7 @@ mod tests {
                                  // 00010101
                                  // 0x15
 
-        system.execute(&OpCode::XORVxVy {
+        system.execute(&OpCode::XorVxVy {
             vx: 0x000F,
             vy: 0x000A,
         });
@@ -434,7 +434,7 @@ mod tests {
         system.v[0x000F] = 0x05;
         system.v[0x000A] = 0x01;
 
-        system.execute(&OpCode::ADDVxVy {
+        system.execute(&OpCode::AddVxVy {
             vx: 0x000F,
             vy: 0x000A,
         });
@@ -451,7 +451,7 @@ mod tests {
         system.v[0x000D] = 0x05; //vx
         system.v[0x000A] = 0x01; //vy
 
-        system.execute(&OpCode::SUB {
+        system.execute(&OpCode::Sub {
             vx: 0x000D,
             vy: 0x000A,
         });
@@ -463,7 +463,7 @@ mod tests {
         system.v[0x000D] = 0x01; //vx
         system.v[0x000A] = 0x05; //vy
 
-        system.execute(&OpCode::SUB {
+        system.execute(&OpCode::Sub {
             vx: 0x000D,
             vy: 0x000A,
         });
@@ -481,7 +481,7 @@ mod tests {
         system.v[0x000D] = 0x01; //vx
         system.v[0x000A] = 0x05; //vy
 
-        system.execute(&OpCode::SUBn {
+        system.execute(&OpCode::SubN {
             vx: 0x000D,
             vy: 0x000A,
         });
@@ -493,7 +493,7 @@ mod tests {
         system.v[0x000D] = 0x05; //vx
         system.v[0x000A] = 0x01; //vy
 
-        system.execute(&OpCode::SUBn {
+        system.execute(&OpCode::SubN {
             vx: 0x000D,
             vy: 0x000A,
         });
@@ -510,7 +510,7 @@ mod tests {
         system.v[0x000A] = 0x05; // vx 00000101
         system.v[0x000B] = 0x01; // vy, ignored in this impl
 
-        system.execute(&OpCode::SHR {
+        system.execute(&OpCode::Shr {
             vx: 0x000A,
             vy: 0x000B,
         });
@@ -524,7 +524,7 @@ mod tests {
         system.v[0x000A] = 0x08; // vx 00001000
         system.v[0x000B] = 0x01; // vy, ignored in this impl
 
-        system.execute(&OpCode::SHR {
+        system.execute(&OpCode::Shr {
             vx: 0x000A,
             vy: 0x000B,
         });
@@ -544,7 +544,7 @@ mod tests {
         system.v[0x000A] = 0x05; // vx 00000101
         system.v[0x000B] = 0x01; // vy, ignored in this impl
 
-        system.execute(&OpCode::SHL {
+        system.execute(&OpCode::Shl {
             vx: 0x000A,
             vy: 0x000B,
         });
@@ -558,7 +558,7 @@ mod tests {
         system.v[0x000A] = 0x90; // vx 10010000
         system.v[0x000B] = 0x01; // vy, ignored in this impl
 
-        system.execute(&OpCode::SHL {
+        system.execute(&OpCode::Shl {
             vx: 0x000A,
             vy: 0x000B,
         });
@@ -578,7 +578,7 @@ mod tests {
         system.v[0x000A] = 0x05;
         system.v[0x000B] = 0x01;
 
-        system.execute(&OpCode::SNEVxVy {
+        system.execute(&OpCode::SneVxVy {
             vx: 0x000A,
             vy: 0x000B,
         });
@@ -592,7 +592,7 @@ mod tests {
         system.v[0x000A] = 0x90;
         system.v[0x000B] = 0x90;
 
-        system.execute(&OpCode::SNEVxVy {
+        system.execute(&OpCode::SneVxVy {
             vx: 0x000A,
             vy: 0x000B,
         });
@@ -604,7 +604,7 @@ mod tests {
     fn ldi() {
         let mut system = System::new();
 
-        system.execute(&OpCode::LDI(0x0123));
+        system.execute(&OpCode::LdI(0x0123));
 
         assert_eq!(0x0123, system.i);
     }
@@ -617,7 +617,7 @@ mod tests {
         let mut system = System::new();
         system.v[0] = 0x0002;
 
-        system.execute(&OpCode::JMPV0(0x0202));
+        system.execute(&OpCode::JmpV0(0x0202));
 
         assert_eq!(0x0204, system.pc);
     }
