@@ -28,6 +28,7 @@ pub enum OpCode {
     ADDIVx(usize),
     LDIVx(usize),
     LDVxI(usize),
+    LDVxK(usize),
     Unknown,
 }
 
@@ -59,6 +60,7 @@ impl Display for OpCode {
             OpCode::ADDIVx(vx) => write!(f, "ADD I VX:{:#06X}", vx),
             OpCode::LDIVx(vx) => write!(f, "LD I VX:{:#06X}", vx),
             OpCode::LDVxI(vx) => write!(f, "LD VX:{:#06X} I", vx),
+            OpCode::LDVxK(vx) => write!(f, "LD VX:{:#06X} K", vx),
             OpCode::DRW { vx, vy, n } => {
                 write!(f, "DRW VX:{:#06X} VX:{:#06X} n:{:#06X}", vx, vy, n)
             }
@@ -155,6 +157,7 @@ pub fn decode(op: u16) -> OpCode {
                 0x001E => OpCode::ADDIVx(((op & 0x0F00) >> 8) as usize),
                 0x0055 => OpCode::LDIVx(((op & 0x0F00) >> 8) as usize),
                 0x0065 => OpCode::LDVxI(((op & 0x0F00) >> 8) as usize),
+                0x000A => OpCode::LDVxK(((op & 0x0F00) >> 8) as usize),
                 _ => OpCode::Unknown,
             },
             _ => OpCode::Unknown,

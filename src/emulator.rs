@@ -134,6 +134,13 @@ impl System {
                     self.v[v] = self.heap.fetch_byte(self.i.wrapping_add(v as u16).into());
                 }
             }
+            OpCode::LDVxK(_vx) => {
+                loop {
+                    todo!("figure out input");
+                    //wait for input
+                    //store key in vx
+                }
+            }
             OpCode::Unknown => {}
         };
     }
