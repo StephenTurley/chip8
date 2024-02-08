@@ -173,11 +173,11 @@ impl System {
             for bit_index in 0..8 {
                 let x = start_x + bit_index;
                 // to get the current pixel we want to convert the bit at bit_index to a bool
-                // shift bits in the row to the left until the current bit is at the least significant position
+                // shift bits in the row to the left until the current bit is at the most significant position
                 // mask all other bits out
                 // convert to bool by != 0
                 if x < 64 && y < 32 {
-                    let pixel = (((sprite_row >> 7) - bit_index) & 0x01) != 0;
+                    let pixel = ((sprite_row << bit_index) & 0x80) != 0;
                     let old_pixel = self.frame_buffer[y as usize][x as usize];
                     let new_pixel = old_pixel ^ pixel;
 
