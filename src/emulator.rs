@@ -1,3 +1,4 @@
+use crate::display;
 use crate::heap;
 use crate::heap::Heap;
 use crate::OpCode;
@@ -120,7 +121,7 @@ impl System {
             }
             OpCode::Drw { vx, vy, n } => {
                 self.update_frame_buffer(vx, vy, n);
-                self.render();
+                display::render(&self.frame_buffer);
             }
             OpCode::AddIVx(vx) => self.i = self.i.wrapping_add(self.v[vx] as u16),
             OpCode::LdIVx(vx) => {
@@ -145,20 +146,7 @@ impl System {
         };
     }
 
-    fn render(&self) {
-        for row in self.frame_buffer {
-            println!();
-            for px in row {
-                let symbol = if px { "⚫" } else { "⚪" };
-
-                print!("{}", symbol);
-            }
-        }
-        println!();
-    }
-
     fn update_frame_buffer(&mut self, vx: usize, vy: usize, sprite_rows: usize) {
-        //fetch screen coordinates
         let start_x = self.v[vx] % 64; // allow the start_x to wrap using modulo
         let start_y = self.v[vy] % 32; // allow the start_y to wrap using modulo
 

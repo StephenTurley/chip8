@@ -1,3 +1,4 @@
+mod display;
 mod emulator;
 mod heap;
 mod op_code;
