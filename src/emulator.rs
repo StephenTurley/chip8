@@ -1,4 +1,3 @@
-use crate::display;
 use crate::heap;
 use crate::heap::Heap;
 use crate::OpCode;
@@ -9,10 +8,11 @@ pub struct System {
     i: u16,
     stack: [u16; 64],
     sp: usize,
-    frame_buffer: [[bool; 64]; 32], //indexed [y][x]; top left [0][0]; bottom right [31, 63]
+    pub frame_buffer: [[bool; 64]; 32], //indexed [y][x]; top left [0][0]; bottom right [31, 63]
     // delay: u8,
     // sound: u8,
     v: [u8; 16],
+    key: Option<char>,
 }
 impl System {
     pub fn new() -> System {
@@ -26,6 +26,7 @@ impl System {
             // delay: 0,
             // sound: 0,
             v: [0; 16],
+            key: None,
         }
     }
 
@@ -40,6 +41,10 @@ impl System {
         let op = self.heap.fetch_op(self.pc as usize);
         self.pc += 2;
         op
+    }
+
+    pub fn set_key(&mut self, key: Option<char>) {
+        self.key = key;
     }
 
     pub fn execute(&mut self, op: &OpCode) {
@@ -121,7 +126,6 @@ impl System {
             }
             OpCode::Drw { vx, vy, n } => {
                 self.update_frame_buffer(vx, vy, n);
-                display::render(&self.frame_buffer);
             }
             OpCode::AddIVx(vx) => self.i = self.i.wrapping_add(self.v[vx] as u16),
             OpCode::LdIVx(vx) => {
@@ -136,11 +140,7 @@ impl System {
                 }
             }
             OpCode::LdVxK(_vx) => {
-                loop {
-                    todo!("figure out input");
-                    //wait for input
-                    //store key in vx
-                }
+                // handle input
             }
             OpCode::Unknown => {}
         };
