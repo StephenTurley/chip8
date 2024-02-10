@@ -27,22 +27,22 @@ fn main() -> Result<()> {
                 if key.kind == event::KeyEventKind::Press {
                     match key.code {
                         Char('q') => break,
-                        Char('0') => system.set_key(Some('0')),
-                        Char('1') => system.set_key(Some('1')),
-                        Char('2') => system.set_key(Some('2')),
-                        Char('3') => system.set_key(Some('3')),
-                        Char('4') => system.set_key(Some('4')),
-                        Char('5') => system.set_key(Some('5')),
-                        Char('6') => system.set_key(Some('6')),
-                        Char('7') => system.set_key(Some('7')),
-                        Char('8') => system.set_key(Some('8')),
-                        Char('9') => system.set_key(Some('9')),
-                        Char('a') => system.set_key(Some('a')),
-                        Char('b') => system.set_key(Some('b')),
-                        Char('c') => system.set_key(Some('c')),
-                        Char('d') => system.set_key(Some('d')),
-                        Char('e') => system.set_key(Some('e')),
-                        Char('f') => system.set_key(Some('f')),
+                        Char('0') => system.set_key(Some(0x0)),
+                        Char('1') => system.set_key(Some(0x1)),
+                        Char('2') => system.set_key(Some(0x2)),
+                        Char('3') => system.set_key(Some(0x3)),
+                        Char('4') => system.set_key(Some(0x4)),
+                        Char('5') => system.set_key(Some(0x5)),
+                        Char('6') => system.set_key(Some(0x6)),
+                        Char('7') => system.set_key(Some(0x7)),
+                        Char('8') => system.set_key(Some(0x8)),
+                        Char('9') => system.set_key(Some(0x9)),
+                        Char('a') => system.set_key(Some(0xA)),
+                        Char('b') => system.set_key(Some(0xB)),
+                        Char('c') => system.set_key(Some(0xC)),
+                        Char('d') => system.set_key(Some(0xD)),
+                        Char('e') => system.set_key(Some(0xE)),
+                        Char('f') => system.set_key(Some(0xF)),
                         _ => system.set_key(None),
                     }
                 } else {
@@ -50,14 +50,15 @@ fn main() -> Result<()> {
                 }
             }
         }
-        // run at 60hz
 
         let op = system.fetch();
 
         let op_code: OpCode = op_code::decode(op);
         // println!("{}", op_code);
         if op_code == OpCode::Unknown {
+            Display::destroy()?;
             println!("Invalid OpCode {:#06X}", op);
+
             break;
         }
 

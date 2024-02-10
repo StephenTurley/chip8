@@ -12,7 +12,7 @@ pub struct System {
     // delay: u8,
     // sound: u8,
     v: [u8; 16],
-    key: Option<char>,
+    key: Option<u8>,
 }
 impl System {
     pub fn new() -> System {
@@ -43,7 +43,7 @@ impl System {
         op
     }
 
-    pub fn set_key(&mut self, key: Option<char>) {
+    pub fn set_key(&mut self, key: Option<u8>) {
         self.key = key;
     }
 
@@ -139,8 +139,12 @@ impl System {
                     self.v[v] = self.heap.fetch_byte(self.i.wrapping_add(v as u16).into());
                 }
             }
-            OpCode::LdVxK(_vx) => {
-                // handle input
+            OpCode::LdVxK(vx) => {
+                if let Some(key) = self.key {
+                    self.v[vx] = key
+                } else {
+                    self.pc -= 2; //loop back to current instruction to wait for key press
+                }
             }
             OpCode::Unknown => {}
         };

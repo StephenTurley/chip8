@@ -4,8 +4,15 @@ use crossterm::{
     ExecutableCommand,
 };
 use ratatui::{
-    prelude::{CrosstermBackend, Stylize, Terminal},
-    widgets::Paragraph,
+    layout::Flex,
+    prelude::*,
+    style::Color,
+    symbols,
+    widgets::{
+        block,
+        canvas::{Canvas, Context, Rectangle},
+        Block, Borders,
+    },
 };
 use std::io::{stdout, Stdout};
 
@@ -27,28 +34,49 @@ impl Display {
         Ok(())
     }
 
-    pub fn render(&mut self, _frame_buffer: &[[bool; 64]; 32]) {
+    pub fn render(&mut self, frame_buffer: &[[bool; 64]; 32]) {
         self.terminal
             .draw(|frame| {
-                let area = frame.size();
+                let area = centered_rect(frame.size(), 128, 32);
                 frame.render_widget(
-                    Paragraph::new("Hello world (press q to quit)")
-                        .white()
-                        .on_blue(),
+                    Canvas::default()
+                        .marker(symbols::Marker::HalfBlock)
+                        .block(
+                            Block::default()
+                                .title(block::Title::from("CHIP-8").alignment(Alignment::Center))
+                                .borders(Borders::ALL),
+                        )
+                        .x_bounds([0.0, 64.0])
+                        .y_bounds([0.0, 32.0])
+                        .paint(|ctx| {
+                            for (y, row) in frame_buffer.iter().enumerate() {
+                                for (x, px) in row.iter().enumerate() {
+                                    if *px {
+                                        draw_pixel(ctx, x as f64, (31 - y) as f64);
+                                    }
+                                }
+                            }
+                        }),
                     area,
-                );
+                )
             })
             .unwrap();
-
-        // print!("\x1B[2J"); // clear terminal
-        // for row in *frame_buffer {
-        //     println!();
-        //     for px in row {
-        //         let symbol = if px { "⚫" } else { "⚪" };
-        //
-        //         print!("{}", symbol);
-        //     }
-        // }
-        // println!();
     }
+}
+
+fn draw_pixel(ctx: &mut Context, x: f64, y: f64) {
+    ctx.draw(&Rectangle {
+        x,
+        y,
+        width: 1.0,
+        height: 1.0,
+        color: Color::LightGreen,
+    });
+}
+fn centered_rect(area: Rect, width: u16, height: u16) -> Rect {
+    let horizontal = Layout::horizontal([width]).flex(Flex::Center);
+    let vertical = Layout::vertical([height]).flex(Flex::Center);
+    let [area] = vertical.areas(area);
+    let [area] = horizontal.areas(area);
+    area
 }
