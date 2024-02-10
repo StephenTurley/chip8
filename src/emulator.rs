@@ -9,8 +9,8 @@ pub struct System {
     stack: [u16; 64],
     sp: usize,
     pub frame_buffer: [[bool; 64]; 32], //indexed [y][x]; top left [0][0]; bottom right [31, 63]
-    // delay: u8,
-    // sound: u8,
+    delay: u8,
+    sound: u8,
     v: [u8; 16],
     key: Option<u8>,
 }
@@ -23,8 +23,8 @@ impl System {
             stack: [0; 64],
             sp: 0,
             frame_buffer: [[false; 64]; 32],
-            // delay: 0,
-            // sound: 0,
+            delay: 0,
+            sound: 0,
             v: [0; 16],
             key: None,
         }
@@ -48,6 +48,14 @@ impl System {
     }
 
     pub fn execute(&mut self, op: &OpCode) {
+        if self.delay > 0 {
+            self.delay -= 1;
+        }
+
+        if self.sound > 0 {
+            self.sound -= 1;
+        }
+
         match *op {
             OpCode::Cls => self.frame_buffer = [[false; 64]; 32],
             OpCode::Ret => {
@@ -145,6 +153,12 @@ impl System {
                 } else {
                     self.pc -= 2; //loop back to current instruction to wait for key press
                 }
+            }
+            OpCode::LdDtVx(vx) => {
+                self.delay = self.v[vx];
+            }
+            OpCode::LdStVx(vx) => {
+                self.sound = self.v[vx];
             }
             OpCode::Unknown => {}
         };

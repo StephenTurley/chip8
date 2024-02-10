@@ -29,6 +29,8 @@ pub enum OpCode {
     LdIVx(usize),
     LdVxI(usize),
     LdVxK(usize),
+    LdDtVx(usize),
+    LdStVx(usize),
     Unknown,
 }
 
@@ -61,6 +63,8 @@ impl Display for OpCode {
             OpCode::LdIVx(vx) => write!(f, "LD I VX:{:#06X}", vx),
             OpCode::LdVxI(vx) => write!(f, "LD VX:{:#06X} I", vx),
             OpCode::LdVxK(vx) => write!(f, "LD VX:{:#06X} K", vx),
+            OpCode::LdDtVx(vx) => write!(f, "LD DT VX:{:#06X}", vx),
+            OpCode::LdStVx(vx) => write!(f, "LD ST VX:{:#06X}", vx),
             OpCode::Drw { vx, vy, n } => {
                 write!(f, "DRW VX:{:#06X} VX:{:#06X} n:{:#06X}", vx, vy, n)
             }
@@ -154,10 +158,12 @@ pub fn decode(op: u16) -> OpCode {
                 n: (op & 0x000F) as usize,
             },
             0xF000 => match op & 0x00FF {
+                0x000A => OpCode::LdVxK(((op & 0x0F00) >> 8) as usize),
                 0x001E => OpCode::AddIVx(((op & 0x0F00) >> 8) as usize),
+                0x0015 => OpCode::LdDtVx(((op & 0x0F00) >> 8) as usize),
+                0x0018 => OpCode::LdStVx(((op & 0x0F00) >> 8) as usize),
                 0x0055 => OpCode::LdIVx(((op & 0x0F00) >> 8) as usize),
                 0x0065 => OpCode::LdVxI(((op & 0x0F00) >> 8) as usize),
-                0x000A => OpCode::LdVxK(((op & 0x0F00) >> 8) as usize),
                 _ => OpCode::Unknown,
             },
             _ => OpCode::Unknown,
