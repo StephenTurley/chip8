@@ -22,7 +22,11 @@ fn main() -> Result<()> {
     let mut system: System = System::init(rom_path);
 
     loop {
-        if event::poll(std::time::Duration::from_millis(16))? {
+        let op = system.fetch();
+
+        let op_code: OpCode = op_code::decode(op);
+
+        if event::poll(std::time::Duration::from_micros(500))? {
             if let Key(key) = event::read()? {
                 if key.kind == event::KeyEventKind::Press {
                     match key.code {
@@ -50,20 +54,20 @@ fn main() -> Result<()> {
                 }
             }
         }
+        match op_code {
+            // only draw when there is a draw call
+            OpCode::Cls | OpCode::Drw { vx: _, vy: _, n: _ } => {
+                system.execute(&op_code);
+                display.render(&system.frame_buffer);
+            }
+            OpCode::Unknown => {
+                Display::destroy()?;
+                println!("Invalid OpCode {:#06X}", op);
+                break;
+            }
 
-        let op = system.fetch();
-
-        let op_code: OpCode = op_code::decode(op);
-        // println!("{}", op_code);
-        if op_code == OpCode::Unknown {
-            Display::destroy()?;
-            println!("Invalid OpCode {:#06X}", op);
-
-            break;
+            _ => system.execute(&op_code),
         }
-
-        system.execute(&op_code);
-        display.render(&system.frame_buffer);
     }
 
     Display::destroy()?;

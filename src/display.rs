@@ -49,18 +49,22 @@ impl Display {
                         .x_bounds([0.0, 64.0])
                         .y_bounds([0.0, 32.0])
                         .paint(|ctx| {
-                            for (y, row) in frame_buffer.iter().enumerate() {
-                                for (x, px) in row.iter().enumerate() {
-                                    if *px {
-                                        draw_pixel(ctx, x as f64, (31 - y) as f64);
-                                    }
-                                }
-                            }
+                            render_frame_buffer(frame_buffer, ctx);
                         }),
                     area,
                 )
             })
             .unwrap();
+    }
+}
+
+fn render_frame_buffer(frame_buffer: &[[bool; 64]; 32], ctx: &mut Context<'_>) {
+    for (y, row) in frame_buffer.iter().enumerate() {
+        for (x, px) in row.iter().enumerate() {
+            if *px {
+                draw_pixel(ctx, x as f64, (31 - y) as f64);
+            }
+        }
     }
 }
 

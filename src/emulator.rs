@@ -1,6 +1,6 @@
 use crate::heap;
 use crate::heap::Heap;
-use crate::OpCode;
+use crate::op_code::OpCode;
 
 pub struct System {
     heap: Heap,
